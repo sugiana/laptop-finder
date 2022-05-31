@@ -20,7 +20,7 @@ COLUMNS = [
 GRAPHICS = ['NVIDIA', 'AMD Radeon', 'Intel Iris']
 
 
-@st.cache
+@st.cache(ttl=60*60*24)
 def read_csv():
     return pd.read_csv(URL, nrows=1000)
 
