@@ -7,8 +7,8 @@ def clickable(cols):
     return f'<a href="{cols.url}">{cols.title}</a>'
 
 
-def price(price):
-    s = '{:0,}'.format(price)
+def price(n):
+    s = '{:0,}'.format(int(n))
     s = s.replace(',', '.')
     return f'Rp {s}'
 
@@ -22,7 +22,7 @@ GRAPHICS = ['NVIDIA', 'AMD Radeon', 'Intel Iris']
 
 @st.cache(ttl=60*60*24)
 def read_csv():
-    return pd.read_csv(URL, nrows=1000)
+    return pd.read_csv(URL)
 
 
 orig_df = read_csv()
@@ -97,5 +97,6 @@ if st.checkbox('Maximum price'):
     price_choice = st.slider('Rp', price_min, price_max, 15000000, price_step)
     df = df[df.price <= price_choice]
 df = df.replace(np.nan, '', regex=True)
+st.write(f'Found {len(df)} rows')
 st.write(
     df.to_html(escape=False), unsafe_allow_html=True)
