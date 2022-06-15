@@ -52,7 +52,7 @@ ASC = dict(
         price=True, memory_gb=False, storage_gb=False, monitor=True,
         weight_kg=True)
 
-DEFAULT = dict(price=2500000, memory=4, storage=128, monitor=6)
+DEFAULT = dict(price=2500000, memory=4, storage=128, monitor=6, weight=0.15)
 
 MAIN = sys.modules[__name__]
 
@@ -93,6 +93,11 @@ storage_index = default_index('storage')
 df = orig_df[orig_df.monitor_inch.notnull()]
 monitor_list = [x for x in df.monitor_inch.drop_duplicates()]
 monitor_index = default_index('monitor')
+
+df = orig_df[orig_df.weight_kg.notnull()]
+df = df[df.weight_kg > 0]
+weight_list = [x for x in df.weight_kg.drop_duplicates()]
+weight_index = default_index('weight')
 
 price_step = 500000
 price_min = int(orig_df.price.min() / price_step + 1) * price_step
