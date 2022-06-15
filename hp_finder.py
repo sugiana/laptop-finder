@@ -1,31 +1,45 @@
-import os
 import sys
+import os
 import numpy as np
 import pandas as pd
 import streamlit as st
 
 
-def clickable(cols):
+def title_value(cols):
     return f'<a href="{cols.url}">{cols.title}</a>'
 
 
-def price(n):
+def price_value(n):
     s = '{:0,}'.format(int(n))
     s = s.replace(',', '.')
     return f'Rp {s}'
 
 
-FILES = [
-        'laptop-all.csv', 'laptop.csv',
-        'http://warga.web.id/files/dijual/laptop.csv.gz']
+def nfc_value(n):
+    if n == '0':
+        return ''
+    if n.lower().find('nfc') > -1:
+        return n
+    return f'NFC {n}'
+
+
+def compass_value(n):
+    if n == '0':
+        return ''
+    if n.lower().find('compass') > -1:
+        return n
+    return n
+
+
+FILES = ['hp-all.csv', 'hp.csv', 'http://warga.web.id/files/dijual/hp.csv.gz']
 for csv_file in FILES:
     if os.path.exists(csv_file):
         break
-
 COLUMNS = [
     'brand', 'title', 'price', 'processor', 'graphic', 'memory', 'memory_gb',
-    'storage', 'storage_gb', 'monitor', 'monitor_inch', 'weight', 'weight_kg']
-GRAPHICS = ['NVIDIA', 'AMD Radeon', 'Intel Iris']
+    'storage', 'storage_gb', 'monitor', 'monitor_inch', 'battery',
+    'battery_mah', 'nfc', 'usb', 'usb_c', 'compass', 'weight', 'weight_kg']
+GRAPHICS = ['Adreno', 'PowerVR']
 
 SORT_BY = dict(
     price='Price',
@@ -38,7 +52,7 @@ ASC = dict(
         price=True, memory_gb=False, storage_gb=False, monitor=True,
         weight_kg=True)
 
-DEFAULT = dict(price=15000000, memory=8, storage=256, monitor=14, weight=1.6)
+DEFAULT = dict(price=2500000, memory=4, storage=128, monitor=6)
 
 MAIN = sys.modules[__name__]
 
@@ -80,18 +94,15 @@ df = orig_df[orig_df.monitor_inch.notnull()]
 monitor_list = [x for x in df.monitor_inch.drop_duplicates()]
 monitor_index = default_index('monitor')
 
-df = orig_df[orig_df.weight_kg.notnull()]
-df = df[df.weight_kg > 0]
-weight_list = [x for x in df.weight_kg.drop_duplicates()]
-weight_index = default_index('weight')
-
 price_step = 500000
 price_min = int(orig_df.price.min() / price_step + 1) * price_step
 price_max = int(orig_df.price.max() / price_step + 1) * price_step
 
 df = orig_df[COLUMNS].copy()
-df['title'] = orig_df.apply(clickable, axis='columns')
-df.insert(3, 'price_rp', df['price'].apply(price))
+df['title'] = orig_df.apply(title_value, axis='columns')
+df['nfc'] = df['nfc'].apply(nfc_value)
+df['compass'] = df['compass'].apply(compass_value)
+df.insert(3, 'price_rp', df['price'].apply(price_value))
 df = df.sort_values(by=['price'])
 
 # Sembunyikan nomor, brand, price, storage_gb, monitor_inch, dan weight_kg
@@ -106,11 +117,13 @@ css = """
     tr>:nth-child(11){display: none}
     tr>:nth-child(13){display: none}
     tr>:nth-child(15){display: none}
+    tr>:nth-child(18){display: none}
+    tr>:nth-child(21){display: none}
     </style>
     """
 st.markdown(css, unsafe_allow_html=True)
 
-st.title('Laptop Finder')
+st.title('HP Finder')
 if st.checkbox('Brand filter'):
     brand_choice = st.selectbox('Brand', brand_list)
     df = df[df.brand == brand_choice]
@@ -120,14 +133,18 @@ if st.checkbox('Graphic filter'):
 if st.checkbox('Minimum memory'):
     memory_choice = st.selectbox('GB', memory_list, index=memory_index)
     df = df[df.memory_gb >= memory_choice]
-if st.checkbox('SSD'):
-    df = df[df.storage.str.contains('ssd', na=False, case=False)]
 if st.checkbox('Minimum storage'):
     storage_choice = st.selectbox('GB', storage_list, index=storage_index)
     df = df[df.storage_gb >= storage_choice]
 if st.checkbox('Maximum monitor'):
     monitor_choice = st.selectbox('Inch', monitor_list, index=monitor_index)
     df = df[df.monitor_inch <= monitor_choice]
+if st.checkbox('NFC'):
+    df = df[df.nfc.str.contains('nfc', na=False, case=False)]
+if st.checkbox('USB Type-C'):
+    df = df[df.usb_c.notnull()]
+if st.checkbox('Compass'):
+    df = df[df.compass.str.contains('compass', na=False, case=False)]
 if st.checkbox('Maximum weight'):
     weight_choice = st.selectbox('Kg', weight_list, index=weight_index)
     df = df[df.weight_kg <= weight_choice]

@@ -1,4 +1,4 @@
-from parser import Parser
+from laptop_parser import Parser
 
 
 XPATH_TITLE = '//h1/text()'
@@ -19,6 +19,9 @@ class Laptop(Parser):
             if url.find('macbook') > -1:
                 r.append(url)
         return r
+
+    def is_product_list(self):
+        return self.response.body.lower().find(b'showing all') > -1
 
     def get_info(self):
         if self.response.url.find('macbook') > -1:

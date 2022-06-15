@@ -1,5 +1,6 @@
 from urllib.parse import urlparse
-from parser import Parser
+from laptop_parser import Parser as BaseLaptop
+from hp_parser import Parser as BaseHP
 
 
 XPATH_TITLE = '//h1/text()'
@@ -10,7 +11,7 @@ XPATH_PRICE_ORIG = '//div[contains(@class,"c-product-price -original")]'\
                    '/span/text()'
 
 
-class Laptop(Parser):
+class Base:
     XPATH_INFO = '//table[@class="c-information__table"]/tbody/tr'
     XPATH_DESC = '//div[@class="c-information__description-txt"]'
 
@@ -37,6 +38,10 @@ class Laptop(Parser):
         page += 1
         return f'{p.scheme}://{p.netloc}{p.path}?page={page}'
 
+    def is_product_list(self):
+        s = self.response.body.lower()
+        return s.find(b'barang etalase') > -1 or s.find(b'semua barang') > -1
+
     def get_info(self) -> dict:
         return super().get_info(3)
 
@@ -49,3 +54,11 @@ class Laptop(Parser):
             xs = self.response.xpath(XPATH_PRICE_ORIG)
         v = xs.extract()[0]
         return v.lstrip('Rp').replace('.', '')
+
+
+class Laptop(Base, BaseLaptop):
+    pass
+
+
+class HP(Base, BaseHP):
+    pass

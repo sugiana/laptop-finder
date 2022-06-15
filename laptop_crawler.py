@@ -23,13 +23,8 @@ URLs = [
     'https://macstore.id/product-category/macbook/',
     ]
 
-BRANDS = ['Acer', 'Apple', 'Asus', 'Dell', 'HP', 'Lenovo', 'MSI']
-BRANDS = [[x.lower(), x] for x in BRANDS]
-BRANDS = dict(BRANDS)
-
 
 class Laptop(Crawler):
     name = 'laptop'
     start_urls = URLs
     parser_classes = PARSERS
-    valid_brands = BRANDS

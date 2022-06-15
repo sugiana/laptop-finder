@@ -9,10 +9,8 @@ from scrapy.item import (
     Field,
     )
 from parser import (
-    InvalidBrand,
     InvalidCategory,
     InvalidDescription,
-    is_valid_range,
     )
 
 
@@ -30,6 +28,12 @@ class Product(Item):
     monitor_inch = Field()
     weight = Field()
     weight_kg = Field()
+    battery = Field()
+    battery_mah = Field()
+    usb = Field()
+    usb_c = Field()
+    nfc = Field()
+    compass = Field()
     url = Field()
 
 
@@ -42,13 +46,11 @@ class Crawler(Spider):
         super().__init__(*args, **kwargs)
         self.product_url = product_url
         self.hostname = hostname
-        self.is_store_url = True
         if product_url:
             # Untuk parsing produk tertentu. Digunakan selama development:
             # ~/env/bin/scrapy runspider laptop.py -O laptop.csv
             # -a product_url=https://...
             if product_url.find('file') == 0:
-                self.is_store_url = False
                 filename = product_url[7:]  # Hapus file://
                 if os.path.isdir(filename):
                     self.start_urls = [
@@ -60,15 +62,15 @@ class Crawler(Spider):
                     self.set_hostname(tmp_dir)
             else:
                 self.start_urls = [product_url]
-                self.is_store_url = product_url.find('official') > -1 or \
-                    product_url.find('category') > -1
 
     def set_hostname(self, tmp_dir):
         if not self.hostname:
             self.hostname = os.path.split(tmp_dir)[-1]
 
     def parse(self, response):  # Override
-        if not self.is_store_url:
+        cls = self.get_parser_class(response)
+        p = cls(response)
+        if response.url.find('file') == 0 or not p.is_product_list():
             yield self.parse_product(response)
         else:
             urls = self.get_product_urls(response)
@@ -109,14 +111,14 @@ class Crawler(Spider):
         except InvalidDescription:
             self.logger.warning(f'Deskripsi tidak dipahami {response.url}')
             return
-        if not is_valid_range('price', d['price'], float(d['price'])):
+        if not p.is_valid_range('price', d['price'], float(d['price'])):
             return
         brand = d['brand'].lower()
-        if brand not in self.valid_brands:
-            self.logger.warning('Brand {brand} tidak terdaftar')
-            return
-        d['brand'] = self.valid_brands[brand]
         d['url'] = p.get_url()
+        if brand not in p.VALID_BRANDS:
+            self.logger.warning(
+                f'Brand {brand} tidak terdaftar {d["url"]}')
+            return
         i = Product()
         for key in d:
             i[key] = d[key]
