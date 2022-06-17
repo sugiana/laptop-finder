@@ -40,7 +40,8 @@ class Base:
 
     def is_product_list(self):
         s = self.response.body.lower()
-        return s.find(b'barang etalase') > -1 or s.find(b'semua barang') > -1
+        return s.find(b'barang etalase') > -1 or \
+            s.find(b'<strong>semua barang') > -1
 
     def get_info(self) -> dict:
         return super().get_info(3)

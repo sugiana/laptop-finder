@@ -118,23 +118,23 @@ class Parser:
         match = C_BRAND_PATTERN.search(title)
         if match:
             return match.group(3)
-        b = title.split()[0]
-        b_lower = b.lower()
-        if b_lower in self.VALID_BRANDS:
-            return self.VALID_BRANDS[b_lower]
-        t_lower = title.lower()
-        for ref_brand in self.MAPPING_BRANDS:
-            if t_lower.find(ref_brand) == 0:
-                return self.MAPPING_BRANDS[ref_brand]
         last_index = 0
-        for ref_brand in self.VALID_BRANDS:
-            index = j_index(ref_brand, b_lower)
-            if index < MIN_J_INDEX:
-                continue
-            if last_index >= index:
-                continue
-            last_index = index
-            last_brand = ref_brand
+        for b in title.split()[:2]:
+            b_lower = b.lower()
+            if b_lower in self.VALID_BRANDS:
+                return self.VALID_BRANDS[b_lower]
+            t_lower = title.lower()
+            for ref_brand in self.MAPPING_BRANDS:
+                if t_lower.find(ref_brand) == 0:
+                    return self.MAPPING_BRANDS[ref_brand]
+            for ref_brand in self.VALID_BRANDS:
+                index = j_index(ref_brand, b_lower)
+                if index < MIN_J_INDEX:
+                    continue
+                if last_index >= index:
+                    continue
+                last_index = index
+                last_brand = ref_brand
         if last_index:
             return self.VALID_BRANDS[last_brand]
         return b

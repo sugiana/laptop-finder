@@ -11,16 +11,17 @@ PARSERS = {
     }
 
 URLs = [
+    'https://macstore.id/product-category/macbook/',
     'https://www.bukalapak.com/acer-official-store-official',
     'https://www.bukalapak.com/asus-laptop-official',
     'https://www.bukalapak.com/dell-store-m2m-official',
+    'https://www.bukalapak.com/gadget-heaven-laptop-official',
     'https://www.bukalapak.com/hp-official-store-official/label/laptop',
     'https://www.bukalapak.com/hp-official-store-official/label/business-notebook',
     'https://www.bukalapak.com/hp-official-store-official/label/premium-notebook',
     'https://www.bukalapak.com/hp-official-store-official/label/gaming-notebook',
     'https://www.bukalapak.com/lenovo-official/label/semua-notebook-laptop',
     'https://www.bukalapak.com/msi-store-official',
-    'https://macstore.id/product-category/macbook/',
     ]
 
 

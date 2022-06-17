@@ -31,10 +31,18 @@ def compass_value(n):
     return n
 
 
-FILES = ['hp-all.csv', 'hp.csv', 'http://warga.web.id/files/dijual/hp.csv.gz']
-for csv_file in FILES:
-    if os.path.exists(csv_file):
-        break
+csv_file = None
+for argv in sys.argv[1:]:
+    if argv[-4:] == '.csv':
+        csv_file = argv
+
+if not csv_file:
+    FILES = [
+        'hp-all.csv', 'hp.csv', 'http://warga.web.id/files/dijual/hp.csv.gz']
+    for csv_file in FILES:
+        if os.path.exists(csv_file):
+            break
+
 COLUMNS = [
     'brand', 'title', 'price', 'processor', 'graphic', 'memory', 'memory_gb',
     'storage', 'storage_gb', 'monitor', 'monitor_inch', 'battery',

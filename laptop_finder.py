@@ -15,12 +15,18 @@ def price(n):
     return f'Rp {s}'
 
 
-FILES = [
-        'laptop-all.csv', 'laptop.csv',
-        'http://warga.web.id/files/dijual/laptop.csv.gz']
-for csv_file in FILES:
-    if os.path.exists(csv_file):
-        break
+csv_file = None
+for argv in sys.argv[1:]:
+    if argv[-4:] == '.csv':
+        csv_file = argv
+
+if not csv_file:
+    FILES = [
+            'laptop-all.csv', 'laptop.csv',
+            'http://warga.web.id/files/dijual/laptop.csv.gz']
+    for csv_file in FILES:
+        if os.path.exists(csv_file):
+            break
 
 COLUMNS = [
     'brand', 'title', 'price', 'processor', 'graphic', 'memory', 'memory_gb',

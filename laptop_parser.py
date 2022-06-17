@@ -13,6 +13,7 @@ class Parser(Base):
     MAPPING_BRANDS = {
         'laptop gaming msi': 'MSI',
         'legion': 'Lenovo',
+        'macbook': 'Apple',
         }
     MINIMUM_VALUES = dict(
         memory=1, storage=128, monitor=7, weight=0.5, price=2000000)
@@ -52,6 +53,7 @@ class Parser(Base):
             r'((?i:amd athlon))(.*)( )(\d+)((?i:[a-z]))',
             r'((?i:amd ryzen))(.*)((?i:processor))',
             r'((?i:apple))(.*)((?i:cpu))',
+            r'((?i:core i))(\d)',
             r'((?i:intel))(.*)((?i:processor))',
             r'((?i:intel))(.*)((?i:i))(\d+)(-)(\d+)((?i:g))(\d+)',
             r'((?i:intel))(.*)((?i:i))(\d+)(-)(\d+)((?i:[a-z]))',

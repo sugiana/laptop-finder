@@ -106,7 +106,8 @@ class Crawler(Spider):
         try:
             d = p.parse()
         except InvalidCategory:
-            self.logger.warning(f'Ini bukan laptop {response.url}')
+            c = ' / '.join(p.CATEGORIES)
+            self.logger.warning(f'Ini bukan {c} {response.url}')
             return
         except InvalidDescription:
             self.logger.warning(f'Deskripsi tidak dipahami {response.url}')
