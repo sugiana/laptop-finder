@@ -22,6 +22,7 @@ URLs = [
     'https://www.bukalapak.com/hp-official-store-official/label/gaming-notebook',
     'https://www.bukalapak.com/lenovo-official/label/semua-notebook-laptop',
     'https://www.bukalapak.com/msi-store-official',
+    'https://www.bukalapak.com/u/levacom',
     ]
 
 

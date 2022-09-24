@@ -13,7 +13,7 @@ USB_C_VALUES = ('fast charge', 'supervooc', 'type-c')
 
 
 class Parser(Base):
-    CATEGORIES = ['android']
+    CATEGORIES = ['android', 'smartphone']
     BRANDS = [
         'Infinix', 'Oppo', 'Nokia', 'Realme', 'Samsung', 'Vivo', 'Xiaomi']
     MAPPING_BRANDS = {

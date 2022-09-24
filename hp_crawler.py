@@ -10,6 +10,7 @@ PARSERS = {
 
 URLs = [
     'https://www.bukalapak.com/infinix-official-store-official/label/hp',
+    'https://www.bukalapak.com/u/joel_phone',
     'https://www.bukalapak.com/oppo-authorized-dealer-official/label/oppo-handphone',
     'https://www.bukalapak.com/realme-authorized-dealer-official',
     'https://www.bukalapak.com/samsung-official-store-official/label/mobile',
