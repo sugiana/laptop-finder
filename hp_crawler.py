@@ -16,6 +16,7 @@ URLs = [
     'https://www.bukalapak.com/samsung-official-store-official/label/mobile',
     'https://www.bukalapak.com/users/11624412',
     'https://www.bukalapak.com/xiaomi-official/label/smartphones',
+    'https://www.bukalapak.com/u/dumagama',
     ]
 
 
