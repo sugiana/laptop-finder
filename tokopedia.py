@@ -1,15 +1,18 @@
 from selenium.webdriver.common.by import By
+from selenium.common.exceptions import NoSuchElementException
 from parser import Parser as BaseParser
 from laptop_parser import Parser as BaseLaptop
 from hp_parser import Parser as BaseHP
 
 
 XPATH_PRODUCT = '//div[contains(@data-testid,"divProductWrapper")]//a'
+XPATH_NEXT = '//a[@data-testid="btnShopProductPageNext"]'
 
 
 class Crawler:
     def __init__(self, driver):
         self.driver = driver
+        self.page = 1
 
     def get_product_urls(self):
         urls = []
@@ -18,6 +21,13 @@ class Crawler:
             if url not in urls:
                 urls.append(url)
         return urls
+
+    def next_page_url(self):
+        try:
+            xs = self.driver.find_element(By.XPATH, XPATH_NEXT)
+            return xs.get_attribute('href')
+        except NoSuchElementException:
+            return
 
     def is_product_list(self):
         return self.driver.page_source.lower().find(

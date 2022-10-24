@@ -513,8 +513,11 @@ class Parser:
         d['brand'] = self.get_brand()
         d['title'] = self.get_title()
         d['price'] = self.get_price()
-        xs = self.response.xpath(self.XPATH_DESC)
-        s = xs.extract()[0]
+        if isinstance(self.XPATH_DESC, str):
+            xs = self.response.xpath(self.XPATH_DESC)
+            s = xs.extract()[0]
+        else:
+            s = self.XPATH_DESC()
         p = HTML2Text()
         p.feed(s)
         rows_list = []  # Skala prioritas

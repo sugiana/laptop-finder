@@ -1,13 +1,16 @@
 from selenium_crawler import App as BaseApp
 from tokopedia import Crawler as Tokopedia
+from shopee import Crawler as Shopee
 
 
 PARSERS = {
     'www.tokopedia.com': Tokopedia,
+    'shopee.co.id': Shopee,
     }
 
 URLs = [
     'https://www.tokopedia.com/nokia-mobile/etalase/nokia-smartphone',
+    'https://shopee.co.id/appleflagship?shopCollection=46775536',
     ]
 
 

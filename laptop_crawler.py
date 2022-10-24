@@ -2,12 +2,14 @@ from crawler import Crawler
 from macstore import Laptop as Macstore
 from bukalapak import Laptop as Bukalapak
 from tokopedia import Laptop as Tokopedia
+from shopee import Laptop as Shopee
 
 
 PARSERS = {
     'macstore.id': Macstore,
     'www.bukalapak.com': Bukalapak,
     'www.tokopedia.com': Tokopedia,
+    'shopee.co.id': Shopee,
     }
 
 URLs = [

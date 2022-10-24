@@ -1,3 +1,5 @@
 scrapy
 streamlit
 selenium
+webdriver-manager
+jaccard-index
