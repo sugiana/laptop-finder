@@ -34,6 +34,7 @@ class Product(Item):
     usb_c = Field()
     nfc = Field()
     compass = Field()
+    network_5g = Field()
     url = Field()
 
 

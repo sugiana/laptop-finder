@@ -93,6 +93,7 @@ class Parser:
     BRANDS = []
     MAPPING_BRANDS = dict()
     VALID_VALUES = dict()
+    VALID_WORDS = dict()
     FALSE_VALUES = dict()
     MAPPING_VALUES = dict()
     NUMERIC_MULTIPLE = dict()
@@ -169,11 +170,15 @@ class Parser:
         raise InvalidCategory()
 
     def validate_value(self, key: str, val: str):
-        if key not in self.VALID_VALUES:
-            return
-        for w in self.VALID_VALUES[key]:
-            if val.find(w) > -1:
-                return
+        if key in self.VALID_WORDS:
+            for w in self.VALID_WORDS[key]:
+                for found in re.findall(r'([a-zA-Z0-9]*)', val):
+                    if found == w:
+                        return
+        elif key in self.VALID_VALUES:
+            for w in self.VALID_VALUES[key]:
+                if val.find(w) > -1:
+                    return
         raise InvalidValue()
 
     def standard_key(self, orig_key: str) -> str:

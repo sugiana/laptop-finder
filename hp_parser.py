@@ -9,21 +9,23 @@ from parser import (
 from laptop_parser import Parser as Base
 
 
-USB_C_VALUES = ('fast charge', 'supervooc', 'type-c')
+USB_C_VALUES = ('fast charge', 'supervooc', 'type-c', 'usb-c')
 
 
 class Parser(Base):
     CATEGORIES = ['android', 'smartphone']
     BRANDS = [
-        'Infinix', 'Oppo', 'Nokia', 'Realme', 'Samsung', 'Vivo', 'Xiaomi']
+        'Apple', 'Infinix', 'Oppo', 'Nokia', 'Realme', 'Samsung', 'Vivo',
+        'Xiaomi']
     MAPPING_BRANDS = {
         'hp samsung': 'Samsung',
         }
     FALSE_VALUES = dict(
         compass=['e-compass'],
-        nfc=['n/a', 'no', 'tidak'])
+        nfc=['n/a', 'no', 'tidak'],
+        network_5g=['5ghz'])
     MINIMUM_VALUES = dict(
-        memory=1, storage=16, monitor=5, battery=1000, price=700000)
+        memory=1, storage=16, monitor=4.7, battery=1000, price=700000)
     MAXIMUM_VALUES = dict(memory=12, storage=1024, monitor=8, weight=0.22)
     NUMERIC_MULTIPLE = dict(storage=16)
     # Jaccard index untuk menetapkan key
@@ -39,27 +41,37 @@ class Parser(Base):
             'interface', 'kabel usb', 'pengisian daya type-c', 'power combo']),
         ('nfc', []),
         ('compass', ['sensors']),
+        ('network_5g', ['jaringan']),
         ]
     # Jaccard index untuk menetapkan value
     MAPPING_VALUES = dict(
         processor=['dimensity', 'octa core'],
         monitor=['inch'],
         battery=['mah'],
-        usb=['micro usb', 'vooc', 'pengisian daya type-c', 'type-c'])
+        usb=['micro usb', 'vooc', 'pengisian daya type-c', 'type-c'],
+        network_5g=['5g'])
+    # Setiap kata yang ditemukan harus tepat memuat nilai berikut ini. Jadi
+    # 5ghz bukan yang dimaksud.
+    VALID_WORDS = dict(
+        network_5g=['5g'],
+        )
     # Nilai ini juga disertakan dalam Jaccard index. Setelah diperoleh index
     # tertinggi tetap dicari apakah memuat kata yang terdapat di VALID_VALUES.
     VALID_VALUES = dict(
         processor=[
-            'cortex', 'dimensity', 'exynos', 'helio', 'mediatek', 'mt', 'octa',
-            'sdm', 'snapdragon', 'unisoc'],
+            'bionic', 'cortex', 'dimensity', 'exynos', 'helio', 'mediatek',
+            'mt', 'octa', 'sdm', 'snapdragon', 'unisoc'],
         graphic=['adreno', 'powervr'],
-        usb=['fast charge', 'micro usb', 'vooc', 'tipe-c', 'type-c', 'usb 2'],
+        usb=[
+            'fast charge', 'micro usb', 'vooc', 'tipe-c', 'type-c', 'usb 2',
+            'usb-c'],
         nfc=['didukung', 'nfc', 'yes'],
         compass=['compass'])
     # Regular expression
     MAPPING_PARTIAL_VALUES = [
         ('processor', [
             r'((?i:snapdragon))( )(\d+)((?i:[a-z]))',
+            r'((?i:[a-z]))(\d+)( )((?i:bionic))',
             ]),
         ('memory', [
             r'(\d+)((?i:gb))(.*)((?i:ram))',
@@ -74,9 +86,11 @@ class Parser(Base):
         ('monitor', [
             f'''{NUMERIC_PATTERN}('|"| ") ''',
             f'''{COMMA_NUMERIC_PATTERN}('|"| ") ''',
+            f'''{COMMA_NUMERIC_PATTERN} (inci)''',
             ]),
-        ('usb', ['((?i:supervooc))']),
+        ('usb', ['((?i:supervooc))', '((?i:kabel usb-c))']),
         ('nfc', ['((?i:nfc))']),
+        ('network_5g', ['((?i:seluler 5g))','((?i:jaringan 5g))']),
         ]
     DICT_MAPPING_PARTIAL_VALUES = dict(MAPPING_PARTIAL_VALUES)
     NUMERIC_VALUES = dict(

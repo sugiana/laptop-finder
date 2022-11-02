@@ -46,7 +46,8 @@ if not csv_file:
 COLUMNS = [
     'brand', 'title', 'price', 'processor', 'graphic', 'memory', 'memory_gb',
     'storage', 'storage_gb', 'monitor', 'monitor_inch', 'battery',
-    'battery_mah', 'nfc', 'usb', 'usb_c', 'compass', 'weight', 'weight_kg']
+    'battery_mah', 'network_5g', 'nfc', 'usb', 'usb_c', 'compass', 'weight',
+    'weight_kg']
 GRAPHICS = ['Adreno', 'PowerVR']
 
 SORT_BY = dict(
@@ -118,22 +119,22 @@ df['compass'] = df['compass'].apply(compass_value)
 df.insert(3, 'price_rp', df['price'].apply(price_value))
 df = df.sort_values(by=['price'])
 
-# Sembunyikan nomor, brand, price, storage_gb, monitor_inch, dan weight_kg
-css = """
+# Kolom
+# 1 nomor, 2 brand, 3 title, 4 price, 5 price_rp, 6 processor, 7 graphic,
+# 8 memory, 9 memory_gb, 10 storage, 11 storage_gb, 12 monitor,
+# 13 monitor_inch, 14 battery, 15 battery_mah, 16 network_5g, 17 nfc,
+# 18 usb, 19 usb_c, 20 compass, 21 weight, 22 weight_kg
+
+# Sembunyikan nomor, dan lainnya yang tidak nyaman
+hide_columns = [2, 4, 9, 11, 13, 15, 19, 22]
+css = '''
     <style>
     .block-container {max-width: 100rem}
     th {display: none}
-    td {vertical-align: top}
-    tr>:nth-child(2){display: none}
-    tr>:nth-child(4){display: none}
-    tr>:nth-child(9){display: none}
-    tr>:nth-child(11){display: none}
-    tr>:nth-child(13){display: none}
-    tr>:nth-child(15){display: none}
-    tr>:nth-child(18){display: none}
-    tr>:nth-child(21){display: none}
-    </style>
-    """
+    td {vertical-align: top}'''
+for column in hide_columns:
+    css += f'\n    tr>:nth-child({column})' + '{display: none}'
+css += '\n</style>'
 st.markdown(css, unsafe_allow_html=True)
 
 st.title('HP Finder')
@@ -152,6 +153,8 @@ if st.checkbox('Minimum storage'):
 if st.checkbox('Maximum monitor'):
     monitor_choice = st.selectbox('Inch', monitor_list, index=monitor_index)
     df = df[df.monitor_inch <= monitor_choice]
+if st.checkbox('5G'):
+    df = df[df.network_5g.str.contains('5g', na=False, case=False)]
 if st.checkbox('NFC'):
     df = df[df.nfc.str.contains('nfc', na=False, case=False)]
 if st.checkbox('USB Type-C'):
