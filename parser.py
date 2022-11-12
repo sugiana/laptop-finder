@@ -179,6 +179,8 @@ class Parser:
             for w in self.VALID_VALUES[key]:
                 if val.find(w) > -1:
                     return
+        else:
+            return
         raise InvalidValue()
 
     def standard_key(self, orig_key: str) -> str:
