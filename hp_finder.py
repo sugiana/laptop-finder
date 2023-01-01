@@ -31,6 +31,12 @@ def compass_value(n):
     return n
 
 
+def network_5g_value(n):
+    if n == '0':
+        return ''
+    return n
+
+
 csv_file = None
 for argv in sys.argv[1:]:
     if argv[-4:] == '.csv':
@@ -116,6 +122,7 @@ df = orig_df[COLUMNS].copy()
 df['title'] = orig_df.apply(title_value, axis='columns')
 df['nfc'] = df['nfc'].apply(nfc_value)
 df['compass'] = df['compass'].apply(compass_value)
+df['network_5g'] = df['network_5g'].apply(network_5g_value)
 df.insert(3, 'price_rp', df['price'].apply(price_value))
 df = df.sort_values(by=['price'])
 

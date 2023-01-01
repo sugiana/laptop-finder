@@ -5,11 +5,12 @@ from jaccard_index.jaccard import jaccard_index
 
 
 C_ALPHABET_PATTERN = re.compile('[a-z]')
-NUMERIC_PATTERN = r'(\d+(?:\.\d+)?)'
+NUMERIC_PATTERN = r'((\d+,\d+)|(\d+\.\d+)|(\d+))'
 C_NUMERIC_PATTERN = re.compile(NUMERIC_PATTERN)
 COMMA_NUMERIC_PATTERN = r'(\d+(?:,\d+)?)'
 C_PARTIAL_PATTERN = re.compile(r'(\S+) :')
 C_BRAND_PATTERN = re.compile(r'^(\S+) ((?i:by)) (\S+)')
+C_WORD = re.compile(r'([a-zA-Z0-9]*)')
 
 GB_SIZE = dict(m=1/1024, g=1, ssd=1, nvme=1, t=1024)
 KG_SIZE = dict(g=1/1000, kg=1)
@@ -57,6 +58,8 @@ def j_index(a: str, b: str) -> float:
 
 def get_numeric(texts):
     for text in texts:
+        if not text:
+            continue
         s = text.replace(',', '.')
         try:
             return float(s)
@@ -67,6 +70,8 @@ def get_numeric(texts):
 def get_thousand(texts):
     for separator in ('.', ','):
         for text in texts:
+            if not text:
+                continue
             s = text.replace(separator, '')
             try:
                 return int(s)
@@ -97,6 +102,7 @@ class Parser:
     FALSE_VALUES = dict()
     MAPPING_VALUES = dict()
     NUMERIC_MULTIPLE = dict()
+    FALSE_CATEGORIES = []
 
     def __init__(self, response):
         self.response = response
@@ -164,15 +170,19 @@ class Parser:
 
     def validate_category(self):
         if 'Kategori' in self.info:
+            k = self.info['Kategori'].lower()
+            for ref_category in self.FALSE_CATEGORIES:
+                if k.find(ref_category) > -1:
+                    raise InvalidCategory()
             for ref_category in self.CATEGORIES:
-                if self.info['Kategori'].lower().find(ref_category) > -1:
+                if k.find(ref_category) > -1:
                     return
         raise InvalidCategory()
 
     def validate_value(self, key: str, val: str):
         if key in self.VALID_WORDS:
             for w in self.VALID_WORDS[key]:
-                for found in re.findall(r'([a-zA-Z0-9]*)', val):
+                for found in C_WORD.findall(val):
                     if found == w:
                         return
         elif key in self.VALID_VALUES:
@@ -376,7 +386,8 @@ class Parser:
                 for pattern in patterns:
                     match = re.compile(pattern).search(txt)
                     if match:
-                        val = ''.join(match.groups())
+                        groups = [x or '' for x in match.groups()]
+                        val = ''.join(groups)
                         r.append((key, val))
                         log.debug(
                             f'{key} {txt} menjadi {val} sesuai pola {pattern}')
@@ -414,10 +425,17 @@ class Parser:
         s = val.lower()
         log = getLogger('choose')
         for pattern in self.NUMERIC_VALUES[key]:
+            if isinstance(pattern, tuple):
+                pattern, numeric_position, unit_position = pattern
+            else:
+                unit_position = -1
             match = re.compile(pattern).search(s)
             if not match:
                 continue
-            texts = match.groups()
+            texts = []
+            for t in match.groups():
+                if t:
+                    texts.append(t)
             if key in THOUSAND_GROUP:
                 numeric = get_thousand(texts)
             else:
@@ -438,7 +456,7 @@ class Parser:
                 key_unit = f'{key}_inch'
                 d[key_unit] = numeric
             else:
-                unit = match.group(2).strip().lower()
+                unit = texts[unit_position].strip().lower()
                 key_unit = f'{key}_{unit}'
                 d[key_unit] = numeric
             if not self.is_valid_range(key, val, d[key_unit]):

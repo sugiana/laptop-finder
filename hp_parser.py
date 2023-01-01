@@ -14,6 +14,7 @@ USB_C_VALUES = ('fast charge', 'supervooc', 'type-c', 'usb-c')
 
 class Parser(Base):
     CATEGORIES = ['android', 'smartphone']
+    FALSE_CATEGORIES = ['tablet']
     BRANDS = [
         'Apple', 'Infinix', 'Oppo', 'Nokia', 'Realme', 'Samsung', 'Vivo',
         'Xiaomi']
@@ -84,13 +85,14 @@ class Parser(Base):
             r'(\d+)((?i:gb))',
             ]),
         ('monitor', [
-            f'''{NUMERIC_PATTERN}('|"| ") ''',
+            f'''{NUMERIC_PATTERN}('|"|''| ") ''',
             f'''{COMMA_NUMERIC_PATTERN}('|"| ") ''',
             f'''{COMMA_NUMERIC_PATTERN} (inci)''',
             ]),
-        ('usb', ['((?i:supervooc))', '((?i:kabel usb-c))']),
+        ('usb', [
+            '((?i:supervooc))', '((?i:kabel usb-c))', '((?i:usb type-c))']),
         ('nfc', ['((?i:nfc))']),
-        ('network_5g', ['((?i:seluler 5g))','((?i:jaringan 5g))']),
+        ('network_5g', ['((?i:seluler 5g))', '((?i:jaringan 5g))']),
         ]
     DICT_MAPPING_PARTIAL_VALUES = dict(MAPPING_PARTIAL_VALUES)
     NUMERIC_VALUES = dict(
@@ -107,6 +109,7 @@ class Parser(Base):
             ],
         monitor=[
             f'{NUMERIC_PATTERN} in',
+            f"{NUMERIC_PATTERN}''",
             f'{COMMA_NUMERIC_PATTERN} in',
             f'{NUMERIC_PATTERN}',
             f'{COMMA_NUMERIC_PATTERN}',
@@ -122,6 +125,7 @@ class Parser(Base):
             f'{COMMA_NUMERIC_PATTERN} (mah)',
             f'{NUMERIC_PATTERN}(mah)',
             f'{COMMA_NUMERIC_PATTERN}(mah)',
+            (f'(mah)(, typical\)){NUMERIC_PATTERN}', 2, 0),
             r'(\d+) (mah)',
             r'(\d+)(mah)',
             ]
@@ -167,6 +171,8 @@ class Parser(Base):
                 if s.find(ref_val) > -1:
                     last_index = 1
                     break
+                if s.find('c') < 0:
+                    continue
                 index = j_index(ref_val, s)
                 if index >= MIN_J_INDEX:
                     last_index = index
