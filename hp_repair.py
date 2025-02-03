@@ -1,9 +1,11 @@
 import sys
+import re
 import pandas as pd
 from tools import (
     nice_str,
     value2keys,
     clean_data,
+    similarity_search,
     )
 
 
@@ -16,14 +18,30 @@ BRAND_ALIAS = dict(
     Xiaomi=['POCO', 'REDMI'])
 brand_back_ref = value2keys(BRAND_ALIAS)
 
-PROCESSOR_BRANDS = ['IMG', 'MediaTek', 'Qualcomm']
+PROCESSOR_BRANDS = ['Apple', 'IMG', 'JLQ', 'MediaTek', 'Qualcomm', 'Samsung',
+                    'UNISOC']
+lower_processors = {s.lower(): s for s in PROCESSOR_BRANDS}
 
-GRAPHIC_BRANDS = ['ARM', 'IMG', 'Qualcomm']
-GRAPHIC_ALIAS = dict(
-    ARM=['IMMORTALIS', 'MALI'],
+PROCESSOR_ALIAS = dict(
+    ARM=['MALI'],
     IMG=['POWERVR'],
-    Qualcomm=['ADRENO'])
+    JLQ=['JR510'],
+    MediaTek=['DIMENSITY', 'HELIO', 'MT', 'MTK', 'SNAPDRAGON'],
+    Samsung=['EXYNOS'],
+    UNISOC=['SC9863A'])
+processor_back_ref = value2keys(PROCESSOR_ALIAS)
+
+GRAPHIC_BRANDS = ['ARM', 'IMG', 'MediaTek', 'Qualcomm']
+lower_graphics = {s.lower(): s for s in GRAPHIC_BRANDS}
+
+GRAPHIC_ALIAS = dict(
+    ARM=['IMMORTALIS', 'MALI', 'MALLI'],
+    IMG=['POWERVR'],
+    MediaTek=['HELIO', 'G80'],
+    Qualcomm=['ADRENO', 'SNAPDRAGON'])
 graphic_back_ref = value2keys(GRAPHIC_ALIAS)
+
+RE_NONE = re.compile('TIDAK|NOT MENTION|NONE|UNKNOWN')
 
 
 def clean_brands(data: dict):
@@ -31,13 +49,17 @@ def clean_brands(data: dict):
         value = data[column]
         if value and not pd.isnull(value):
             value = value.upper()
-            if value.find('TIDAK') == 0:
+            if RE_NONE.search(value):
                 s = 'LAINNYA'
             else:
                 s = value.strip().replace('.', '')
+                if column == 'graphic_brand':
+                    s = similarity_search(s, lower_graphics)
+                elif column == 'processor_brand':
+                    s = similarity_search(s, lower_processors)
             data[column] = s
     clean_data(data, 'brand', BRANDS, brand_back_ref)
-    clean_data(data, 'processor_brand', PROCESSOR_BRANDS)
+    clean_data(data, 'processor_brand', PROCESSOR_BRANDS, processor_back_ref)
     clean_data(data, 'graphic_brand', GRAPHIC_BRANDS, graphic_back_ref)
 
 

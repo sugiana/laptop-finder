@@ -183,6 +183,9 @@ Kadang AI memberikan format JSON yang kurang pas - misalnya kelebihan karakter
 koma - maka cukup jalankan lagi. Biasanya AI memberi jawaban berbeda dengan
 format JSON yang benar.
 
+Hasilnya bisa dilihat di `Laptop Finder <https://s.id/laptop-dijual>`_ dan
+`HP Finder <https://s.id/hp-dijual>`_.
+
 Semoga berhasil.
 
 

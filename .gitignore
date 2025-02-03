@@ -3,7 +3,7 @@ test-*
 live-*
 *.csv
 *.log
-*.bash
+*.sh
 *.html
 *.bak
 *.gz

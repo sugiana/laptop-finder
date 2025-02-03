@@ -25,7 +25,6 @@ for index, row in orig_df.iterrows():
         print(f'{column}: {value}')
     print()
 
-
 print('RINGKASAN KATEGORI')
 count = orig_df.groupby('category').size()
 df = count.reset_index()
@@ -34,12 +33,12 @@ for index, row in df.iterrows():
     print(f'{name} = {count} unit')
 print()
 
-orig_df = orig_df[orig_df.category == 'hp']
 print('RINGKASAN HP')
+orig_df = orig_df[orig_df.category == 'hp']
+orig_df = orig_df[orig_df.stock > 0]
 
 columns = ['brand', 'processor_brand', 'graphic_brand', 'memory_gb',
            'storage_gb', 'is_new', 'battery_mah']
-
 for column in columns:
     field = getattr(orig_df, column)
     df = orig_df[field.notnull()]
@@ -54,7 +53,6 @@ for column in columns:
 
 # Boolean
 columns = ['nfc', 'network_5g', 'stock']
-
 for column in columns:
     field = getattr(orig_df, column)
     df = orig_df[field > 0]
@@ -63,7 +61,6 @@ for column in columns:
 
 # Boolean str
 columns = ['usb_c', 'compass']
-
 for column in columns:
     field = getattr(orig_df, column)
     df = orig_df[field.notnull()]
@@ -72,7 +69,6 @@ for column in columns:
 
 # Min & Max
 columns = ['weight_kg', 'price']
-
 for column in columns:
     field = getattr(orig_df, column)
     df = orig_df[field > 0]

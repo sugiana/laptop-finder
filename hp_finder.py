@@ -6,7 +6,8 @@ import streamlit as st
 
 
 def get_title(cols):
-    return f'<a href="{cols.url}">{cols.title}</a>'
+    return f'<a href="{cols.url}">{cols.title}</a>'\
+           f'<br/><em>{cols.time}</em>'
 
 
 def get_is_new(is_new: int, stock: int):
@@ -98,36 +99,39 @@ def read_csv():
 
 orig_df = read_csv()
 orig_df = orig_df[orig_df.category == 'hp']
+choice_df = orig_df[orig_df.stock > 0]
 
-brand_list = [x for x in orig_df.brand.drop_duplicates()]
+brand_list = [x for x in choice_df.brand.drop_duplicates()]
 brand_list.sort()
 
-processor_list = [x for x in orig_df.processor_brand.drop_duplicates()]
+df = choice_df[choice_df.processor_brand.notnull()]
+processor_list = [x for x in df.processor_brand.drop_duplicates()]
 processor_list.sort()
 
-graphic_list = [x for x in orig_df.graphic_brand.drop_duplicates()]
+df = choice_df[choice_df.graphic_brand.notnull()]
+graphic_list = [x for x in df.graphic_brand.drop_duplicates()]
 graphic_list.sort()
 
-df = orig_df[orig_df.memory_gb.notnull()]
+df = choice_df[choice_df.memory_gb.notnull()]
 memory_list = [int(x) for x in df.memory_gb.drop_duplicates()]
 memory_index = default_index('memory')
 
-df = orig_df[orig_df.storage_gb.notnull()]
+df = choice_df[choice_df.storage_gb.notnull()]
 storage_list = [int(x) for x in df.storage_gb.drop_duplicates()]
 storage_index = default_index('storage')
 
-df = orig_df[orig_df.monitor_inch.notnull()]
+df = choice_df[choice_df.monitor_inch.notnull()]
 monitor_list = [x for x in df.monitor_inch.drop_duplicates()]
 monitor_index = default_index('monitor')
 
-df = orig_df[orig_df.weight_kg.notnull()]
+df = choice_df[choice_df.weight_kg.notnull()]
 df = df[df.weight_kg > 0]
 weight_list = [x for x in df.weight_kg.drop_duplicates()]
 weight_index = default_index('weight')
 
 price_step = 500000
-price_min = int(orig_df.price.min() / price_step + 1) * price_step
-price_max = int(orig_df.price.max() / price_step + 1) * price_step
+price_min = int(choice_df.price.min() / price_step + 1) * price_step
+price_max = int(choice_df.price.max() / price_step + 1) * price_step
 
 df = orig_df[COLUMNS].copy()
 df['title'] = orig_df.apply(get_title, axis='columns')

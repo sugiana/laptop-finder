@@ -4,6 +4,7 @@ import json
 import unicodedata
 from hashlib import md5
 from datetime import datetime
+from jaccard_index.jaccard import jaccard_index
 import pandas as pd
 
 
@@ -67,6 +68,15 @@ def clean_data(data: dict, column: str, nice_names: list, back_ref=dict()):
     for key, value in back_ref.items():
         if data[column].find(key) > -1:
             data[column] = value
+
+
+def similarity_search(name: str, ref_dict: dict) -> str:
+    name_lower = name.lower()
+    for ref_lower, ref in ref_dict.items():
+        index = jaccard_index(name_lower, ref_lower)
+        if index >= 0.3:
+            return ref
+    return name
 
 
 def file_time(filename: str) -> datetime:
