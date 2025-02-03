@@ -1,0 +1,12 @@
+Versi 2 2025-02-03
+------------------
+- Penggunaan Ollama dan Gemini
+- Penerapan cache
+- Semua yang gagal diterjemahkan dimasukkan ke dalam kategori lainnya agar saat
+  dibaca-ulang tidak terlalu lama.
+- Shopee dihapus karena wajib login.
+- Bukalapak dihapus karena tidak lagi menjual produk fisik.
+
+Versi 1 2023-01-01 
+------------------
+- Kali pertama

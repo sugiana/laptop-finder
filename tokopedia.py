@@ -1,18 +1,20 @@
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
-from parser import Parser as BaseParser
-from laptop_parser import Parser as BaseLaptop
-from hp_parser import Parser as BaseHP
+from parser import (
+    HTML2Text,
+    BaseProductParser,
+    UrlNotFound,
+    DescriptionNotFound
+    )
 
 
 XPATH_PRODUCT = '//div[contains(@data-testid,"divProductWrapper")]//a'
 XPATH_NEXT = '//a[@data-testid="btnShopProductPageNext"]'
 
 
-class Crawler:
+class ListParser:
     def __init__(self, driver):
         self.driver = driver
-        self.page = 1
 
     def get_product_urls(self):
         urls = []
@@ -42,40 +44,87 @@ XPATH_TITLE = '//h1/text()'
 XPATH_PRICE = '//div[@class="price"]/text()'
 XPATH_URL = '//meta[contains(@name,"desktop_url")]/@content'
 XPATH_SHOP_NAME = '//a[@data-testid="llbPDPFooterShopName"]/h2/text()'
+XPATH_INFO = '//ul[@data-testid="lblPDPInfoProduk"]/li'
+XPATH_DESC = '//div[@data-testid="lblPDPDescriptionProduk"]'
+XPATH_STOCK = '//p[@data-testid="stock-label"]'
+
+EVERY_LINE = 2
 
 
-class Parser(BaseParser):
-    XPATH_INFO = '//ul[@data-testid="lblPDPInfoProduk"]/li'
-    XPATH_DESC = '//div[@data-testid="lblPDPDescriptionProduk"]'
+class ProductParser(BaseProductParser):
+    def __init__(self, html):
+        super().__init__(html)
+        url = self.get_url()
+        if not url:
+            raise UrlNotFound()
+        info = self.get_info()
+        is_new = info['Kondisi'] == 'Baru' and 1 or 0
+        self.data = dict(
+            url=url,
+            shop_name=self.get_shop_name(),
+            title=self.get_title(),
+            price=self.get_price(),
+            info=info,
+            is_new=is_new,
+            stock=self.get_stock(),
+            description=self.get_description())
 
-    def get_title(self) -> str:  # Override
-        return self.response.xpath(XPATH_TITLE).extract()[0]
-
-    def get_price(self) -> str:  # Override
-        s = self.response.xpath(XPATH_PRICE).extract()[0].lstrip('Rp')
-        return s.replace('.', '')
-
-    def get_url(self) -> str:  # Override
-        return self.response.xpath(XPATH_URL).extract()[0]
+    def get_url(self) -> str:
+        r = self.sel.xpath(XPATH_URL).extract()
+        return r and r[0]
 
     def get_shop_name(self) -> str:
-        return self.response.xpath(XPATH_SHOP_NAME).extract()[0]
+        r = self.sel.xpath(XPATH_SHOP_NAME).extract()
+        return r and r[0] or None
 
-    def get_brand(self) -> str:  # Override
-        brand = super().get_brand()
-        b_lower = brand.lower()
-        if b_lower in self.VALID_BRANDS:
-            return brand
-        shop_name = self.get_shop_name()
-        b_lower = shop_name.lower().split()[0]
-        if b_lower in self.VALID_BRANDS:
-            return self.VALID_BRANDS[b_lower]
-        return brand
+    def get_title(self) -> str:
+        return self.sel.xpath(XPATH_TITLE).extract()[0]
 
+    def get_price(self) -> str:
+        s = self.sel.xpath(XPATH_PRICE).extract()[0].lstrip('Rp')
+        s = s.replace('.', '')
+        return float(s)
 
-class Laptop(Parser, BaseLaptop):
-    pass
+    def get_info(self) -> dict:
+        lines = []
+        for xs in self.sel.xpath(XPATH_INFO):
+            s = xs.extract()
+            p = HTML2Text()
+            p.feed(s)
+            lines += p.lines
+        numbers = range(0, len(lines), EVERY_LINE)
+        lines = [lines[x:x+EVERY_LINE] for x in numbers]
+        d = dict()
+        for t in lines:
+            key = t[0]
+            val = t[-1]
+            key = key.split(':')[0]
+            d[key] = val
+        return d
 
+    def get_description(self) -> str:
+        xs = self.sel.xpath(XPATH_DESC)
+        s = xs.extract()
+        if not s:
+            raise DescriptionNotFound()
+        s = s[0]
+        p = HTML2Text()
+        p.feed(s)
+        return '\n'.join(p.lines)
 
-class HP(Parser, BaseHP):
-    pass
+    def get_stock(self) -> int:
+        xs = self.sel.xpath(XPATH_STOCK)
+        s = xs.extract()
+        if not s:
+            return 1
+        s = s[0]
+        p = HTML2Text()
+        p.feed(s)
+        if p.lines[-1].lower().find('tidak') > -1:
+            return 0
+        s = p.lines[-1].split()[-1]
+        s = s == 'Habis' and '0' or s.replace('.', '')
+        try:
+            return int(s)
+        except ValueError:
+            return 1

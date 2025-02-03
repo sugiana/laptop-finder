@@ -1,0 +1,88 @@
+import sys
+import os
+import json
+from argparse import ArgumentParser
+import pandas as pd
+from parser import BaseError
+from tools import file_time
+from tokopedia import ProductParser as TokopediaProductParser
+from macstore import ProductParser as MacstoreProductParser
+
+
+PARSER_CLASSES = dict(
+    tokopedia=TokopediaProductParser,
+    macstore=MacstoreProductParser)
+
+
+def to_csv(parser: str, download_dir: str, output_file: str):
+    parser_class = PARSER_CLASSES[parser]
+    if os.path.exists(output_file):
+        orig_df = pd.read_csv(output_file)
+    else:
+        orig_df = None
+    is_first = True
+    no = 0
+    for filename in os.listdir(download_dir):
+        full_path = os.path.join(download_dir, filename)
+        print(full_path)
+        with open(full_path) as f:
+            html = f.read()
+        try:
+            parser = parser_class(html)
+        except BaseError:
+            print('  tidak dipahami')
+            continue
+        d = dict(parser.data)
+        if not d['description']:
+            print('  tidak ada description')
+            continue
+        d['info'] = json.dumps(d['info'])
+        d['time'] = file_time(full_path).strftime('%Y-%m-%d %H:%M:%S')
+        data = {column: [d[column]] for column in d}
+        df = pd.DataFrame(data)
+        if orig_df is None:
+            if is_first:
+                msg = 'CREATE'
+                df.to_csv(output_file, index=False)
+                is_first = False
+            else:
+                msg = 'INSERT'
+                df.to_csv(output_file, index=False, mode='a', header=False)
+        else:
+            key_df = orig_df[orig_df.url == d['url']]
+            if key_df.empty:
+                msg = 'INSERT'
+                df.to_csv(output_file, index=False, mode='a', header=False)
+            else:
+                msg = 'UPDATE'
+                for column in orig_df.columns:
+                    orig_df.loc[orig_df.url == d['url'], column] = d[column]
+                orig_df.to_csv(output_file, index=False)
+        no += 1
+        print(f'#{no} {msg} {d["url"]}')
+    print(f'Sudah tersimpan di {output_file}')
+
+
+def main(argv=sys.argv[1:]):
+    parser_names = list(PARSER_CLASSES.keys())
+    parser = parser_names[0]
+    help_parser = f'default {parser}'
+
+    download_dir = '/home/sugiana/tmp/' + parser
+    help_tmp = f'default {download_dir}'
+
+    output_file = f'{parser}.csv'
+    help_output = f'default {output_file}'
+
+    pars = ArgumentParser()
+    pars.add_argument('--download-dir', default=download_dir, help=help_tmp)
+    pars.add_argument(
+        '--parser', default=parser, help=help_parser, choices=parser_names)
+    pars.add_argument('--output-file', default=output_file, help=help_output)
+    option = pars.parse_args(sys.argv[1:])
+
+    to_csv(option.parser, option.download_dir, option.output_file)
+
+
+if __name__ == '__main__':
+    main()

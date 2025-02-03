@@ -1,5 +1,7 @@
-scrapy
-streamlit
 selenium
 webdriver-manager
-jaccard-index
+parsel
+pandas
+requests
+ollama
+streamlit

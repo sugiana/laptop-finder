@@ -1,127 +1,71 @@
+import sys
 import os
+from argparse import ArgumentParser
+from configparser import ConfigParser
 from urllib.parse import urlparse
-from scrapy import (
-    Spider,
-    Request,
-    )
-from scrapy.item import (
-    Item,
-    Field,
-    )
-from parser import (
-    InvalidCategory,
-    InvalidDescription,
-    )
+from downloader import Browser
+from to_csv import to_csv
+from to_category import parse as base_parse
+from to_category_by_gemini import parse as gemini_parse
+from laptop_repair import repair as laptop_repair
+from hp_repair import repair as hp_repair
+from csv_concat import concat
 
 
-class Product(Item):
-    brand = Field()
-    title = Field()
-    price = Field()
-    processor = Field()
-    graphic = Field()
-    memory = Field()
-    memory_gb = Field()
-    storage = Field()
-    storage_gb = Field()
-    monitor = Field()
-    monitor_inch = Field()
-    weight = Field()
-    weight_kg = Field()
-    battery = Field()
-    battery_mah = Field()
-    usb = Field()
-    usb_c = Field()
-    nfc = Field()
-    compass = Field()
-    network_5g = Field()
-    url = Field()
+REPAIR_FUNCTIONS = dict(
+    laptop=laptop_repair,
+    hp=hp_repair)
 
+categories = list(REPAIR_FUNCTIONS.keys())
 
-class Crawler(Spider):
-    name = 'laptop'
-    parser_classes = dict()  # Override, please
+pars = ArgumentParser()
+pars.add_argument('conf')
+option = pars.parse_args(sys.argv[1:])
 
-    def __init__(
-            self, product_url=None, hostname=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.product_url = product_url
-        self.hostname = hostname
-        if product_url:
-            # Untuk parsing produk tertentu. Digunakan selama development:
-            # ~/env/bin/scrapy runspider laptop.py -O laptop.csv
-            # -a product_url=https://...
-            if product_url.find('file') == 0:
-                filename = product_url[7:]  # Hapus file://
-                if os.path.isdir(filename):
-                    self.start_urls = [
-                        f'file://{filename}/{x}' for x in os.listdir(filename)]
-                    self.set_hostname(filename)
-                else:
-                    self.start_urls = [product_url]
-                    tmp_dir = os.path.split(filename)[0]
-                    self.set_hostname(tmp_dir)
-            else:
-                self.start_urls = [product_url]
+conf = ConfigParser()
+conf.read(option.conf)
 
-    def set_hostname(self, tmp_dir):
-        if not self.hostname:
-            self.hostname = os.path.split(tmp_dir)[-1]
+cf = dict(conf.items('main'))
+repair_func = REPAIR_FUNCTIONS[cf['category']]
 
-    def parse(self, response):  # Override
-        cls = self.get_parser_class(response)
-        p = cls(response)
-        if response.url.find('file') == 0 or not p.is_product_list():
-            yield self.parse_product(response)
-        else:
-            urls = self.get_product_urls(response)
-            for url in urls:
-                yield Request(url, callback=self.product_generator)
-            if urls:
-                yield self.next_page(response)
+download_dirs = []
+for url in cf['url'].strip().splitlines():
+    print(url)
+    p = urlparse(url)
+    shop_path = p.path.lstrip('/').split('/')[0]
+    web_name = p.netloc.split('.')[-2]
+    download_dir = '-'.join([web_name, shop_path])
+    download_dir = os.path.join(cf['base_download_dir'], download_dir)
+    download_dirs.append((web_name, download_dir))
+    print('  Download Directory:', download_dir)
+    if os.path.exists(download_dir):
+        if os.listdir(download_dir):
+            print('  Ada isinya')
+            continue
+    else:
+        os.mkdir(download_dir)
+    a = Browser(url, download_dir)
+    a.run()
 
-    def get_parser_class(self, response):
-        if self.hostname:
-            name = self.hostname
-        else:
-            p = urlparse(response.url)
-            name = p.netloc
-        return self.parser_classes[name]
+csv_sources = []
+for web_name, download_dir in download_dirs:
+    output_file = os.path.split(download_dir)[-1] + '.csv'
+    print(f'{download_dir} -> {output_file}')
+    to_csv(web_name, download_dir, output_file)
+    csv_sources.append(output_file)
 
-    def get_product_urls(self, response) -> list:
-        cls = self.get_parser_class(response)
-        return cls.get_product_urls(response)
-
-    def product_generator(self, response):
-        yield self.parse_product(response)
-
-    def next_page(self, response):
-        cls = self.get_parser_class(response)
-        url = cls.next_page_url(response)
-        if url:
-            return Request(url, callback=self.parse)
-
-    def parse_product(self, response) -> dict:
-        cls = self.get_parser_class(response)
-        p = cls(response)
-        try:
-            d = p.parse()
-        except InvalidCategory:
-            c = ' / '.join(p.CATEGORIES)
-            self.logger.warning(f'Ini bukan {c} {response.url}')
-            return
-        except InvalidDescription:
-            self.logger.warning(f'Deskripsi tidak dipahami {response.url}')
-            return
-        if not p.is_valid_range('price', d['price'], float(d['price'])):
-            return
-        brand = d['brand'].lower()
-        d['url'] = p.get_url()
-        if brand not in p.VALID_BRANDS:
-            self.logger.warning(
-                f'Brand {brand} tidak terdaftar {d["url"]}')
-            return
-        i = Product()
-        for key in d:
-            i[key] = d[key]
-        return i
+for csv_source in csv_sources:
+    name, ext = os.path.splitext(csv_source)
+    output_file = [cf['category']] + name.split('-')[1:]
+    output_file = '-'.join(output_file) + ext
+    print(output_file)
+    if 'gemini_url' in cf:
+        gemini_parse(
+            cf['category'], csv_source, output_file, cf['gemini_key'],
+            cf['gemini_url'])
+    else:
+        d = dict(url=cf['ollama_url'], model=cf['ollama_model'])
+        ai_info = dict(ollama=d)
+        base_parse(cf['category'], csv_source, output_file, ai_info)
+    repair_func(output_file)
+    concat(cf['category'])
