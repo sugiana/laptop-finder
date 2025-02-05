@@ -197,6 +197,7 @@ Kategori ``laptop``:
 - `NVIDIA Geforce Laptop <https://www.tokopedia.com/nvidiageforcelt/product>`_
 - `Lenovo Authorized Jakarta Pusat <https://www.tokopedia.com/lenovojakarta/product>`_
 - `Dell Premium Official <https://www.tokopedia.com/dell-premium-official/product>`_
+- `Dell Official Store <https://www.tokopedia.com/dellflagship/product>`_
 - `ASUS Official Store <https://www.tokopedia.com/asus/product>`_
 - `Mac Store Indonesia <https://macstore.id/product-category/macbook>`_
 - `MSI Official Store <https://www.tokopedia.com/msi-official/product>`_

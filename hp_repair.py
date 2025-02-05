@@ -64,7 +64,7 @@ def clean_brands(data: dict):
 
 
 NUMERIC_COLUMNS = ['monitor_inch', 'memory_gb', 'storage_gb', 'weight_kg',
-                   'battery_mah']
+                   'battery_mah', 'camera_mp', 'camera_aperture']
 
 
 def clean_numeric(data: dict):
@@ -75,7 +75,7 @@ def clean_numeric(data: dict):
             data[column] = None
 
 
-BOOLEAN_COLUMNS = ['usb_c', 'nfc', 'network_5g']
+BOOLEAN_COLUMNS = ['usb_c', 'nfc', 'network_5g', 'camera_ois']
 
 
 def clean_boolean(data: dict):

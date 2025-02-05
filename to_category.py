@@ -76,12 +76,17 @@ Jika "ya" maka lanjut jawab ini:
 18. Apakah ada NFC ? Jawab "ya, ada" atau "tidak ada".
 19. Apakah ada dukungan terhadap network 5G ? Jawab "ya, ada" atau "tidak ada".
 20. Kalimat mana yang menunjukkan berat ? Singkat saja.
-21. Beratnya berapa kilogram ? Sebut angka saja.''',
+21. Beratnya berapa kilogram ? Sebut angka saja.
+22. Kalimat mana yang menunjukkan fitur kamera ? Singkat saja.
+23. Kameranya berapa mega pixel ? Sebut angka saja.
+24. Aperture-nya berapa ? Biasanya tertulis f/n, sebutkan nilai n saja.
+25. Apakah ada Optical Image Stabilization ? Jawab "ya, ada" atau "tidak ada"''',
         columns=[
             'category', 'brand', 'processor', 'processor_brand', 'graphic',
             'graphic_brand', 'memory', 'memory_gb', 'storage', 'storage_gb',
             'monitor', 'monitor_inch', 'usb', 'usb_c', 'compass', 'battery',
-            'battery_mah', 'nfc', 'network_5g', 'weight', 'weight_kg']))
+            'battery_mah', 'nfc', 'network_5g', 'weight', 'weight_kg',
+            'camera', 'camera_mp', 'camera_aperture', 'camera_ois']))
 
 
 class HttpErr(Exception):
@@ -111,10 +116,12 @@ def ask(prompt: str, ai_info: dict) -> str:
 
 def parse(
         category: str, input_file: str, output_file: str, ai_info=dict(),
-        limit=None):
+        limit=0, filter_url=''):
     input_df = pd.read_csv(input_file)
     if limit:
         input_df = input_df[:limit]
+    if filter_url:
+        input_df = input_df[input_df.url == filter_url]
     if os.path.exists(output_file):
         output_df = pd.read_csv(output_file)
     else:
@@ -184,6 +191,8 @@ def main(arg=sys.argv[1:]):
                   'models/gemini-1.5-flash:generateContent'
     help_key = 'bisa file'
 
+    help_filter = 'Hanya url tertentu saja'
+
     pars = ArgumentParser()
     pars.add_argument(
         '--category', default=category, help=help_category, choices=categories)
@@ -194,6 +203,7 @@ def main(arg=sys.argv[1:]):
     pars.add_argument('--model', default=model, help=help_model)
     pars.add_argument('--gemini-url', help=help_gemini)
     pars.add_argument('--key', help=help_key)
+    pars.add_argument('--filter-url', help=help_filter)
     option = pars.parse_args(sys.argv[1:])
 
     ai_info = dict()
@@ -212,7 +222,7 @@ def main(arg=sys.argv[1:]):
         ai_info['ollama'] = dict(url=option.ollama_url, model=option.model)
     parse(
         option.category, option.input_file, option.output_file, ai_info,
-        option.limit)
+        option.limit, option.filter_url)
 
 
 if __name__ == '__main__':

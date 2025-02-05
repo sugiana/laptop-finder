@@ -59,20 +59,24 @@ COLUMNS = [
     'brand', 'title', 'price', 'processor', 'graphic', 'memory', 'memory_gb',
     'storage', 'storage_gb', 'monitor', 'monitor_inch', 'battery',
     'battery_mah', 'network_5g', 'nfc', 'usb', 'usb_c', 'compass', 'weight',
-    'weight_kg', 'is_new', 'stock', 'processor_brand', 'graphic_brand']
+    'weight_kg', 'is_new', 'stock', 'processor_brand', 'graphic_brand',
+    'camera', 'camera_mp', 'camera_aperture', 'camera_ois']
 
 SORT_BY = dict(
     price='Price',
     memory_gb='Memory',
     storage_gb='Storage',
     monitor='Monitor',
+    camera_mp='Camera pixel',
+    camera_aperture='Camera aperture',
     weight_kg='Weight')
 SORT_BY_KEYS = list(SORT_BY.keys())
 ASC = dict(
         price=True, memory_gb=False, storage_gb=False, monitor=True,
-        weight_kg=True)
+        weight_kg=True, camera_mp=False, camera_aperture=True)
 
-DEFAULT = dict(price=2500000, memory=4, storage=128, monitor=6, weight=0.15)
+DEFAULT = dict(price=2500000, memory=4, storage=128, monitor=6, weight=0.15,
+               camera_mp=50, camera_aperture=1.8)
 
 MAIN = sys.modules[__name__]
 
@@ -129,6 +133,16 @@ df = df[df.weight_kg > 0]
 weight_list = [x for x in df.weight_kg.drop_duplicates()]
 weight_index = default_index('weight')
 
+df = choice_df[choice_df.camera_mp.notnull()]
+df = df[df.camera_mp > 0]
+camera_mp_list = [int(x) for x in df.camera_mp.drop_duplicates()]
+camera_mp_index = default_index('camera_mp')
+
+df = choice_df[choice_df.camera_aperture.notnull()]
+df = df[df.camera_aperture > 0]
+camera_aperture_list = [x for x in df.camera_aperture.drop_duplicates()]
+camera_aperture_index = default_index('camera_aperture')
+
 price_step = 500000
 price_min = int(choice_df.price.min() / price_step + 1) * price_step
 price_max = int(choice_df.price.max() / price_step + 1) * price_step
@@ -145,10 +159,11 @@ df = df.sort_values(by=['price'])
 # 8 memory, 9 memory_gb, 10 storage, 11 storage_gb, 12 monitor,
 # 13 monitor_inch, 14 battery, 15 battery_mah, 16 network_5g, 17 nfc,
 # 18 usb, 19 usb_c, 20 compass, 21 weight, 22 weight_kg, 23 is_new, 24 stock,
-# 25 processor_brand, 26 graphic_brand
+# 25 processor_brand, 26 graphic_brand, 27 camera, 28 camera_mp,
+# 29 camera_aperture, 30 camera_ois
 
 # Sembunyikan nomor, dan lainnya yang tidak nyaman
-hide_columns = [2, 4, 9, 11, 13, 15, 19, 22, 23, 24, 25, 26]
+hide_columns = [2, 4, 9, 11, 13, 15, 19, 22, 23, 24, 25, 26, 28, 29, 30]
 css = '''
     <style>
     .block-container {max-width: 100rem}
@@ -192,6 +207,15 @@ if st.checkbox('Minimum memory'):
 if st.checkbox('Minimum storage'):
     storage_choice = st.selectbox('GB', storage_list, index=storage_index)
     df = df[df.storage_gb >= storage_choice]
+if st.checkbox('Camera pixel'):
+    camera_mp_choice = st.selectbox(
+        'Megapixel', camera_mp_list, index=camera_mp_index)
+    df = df[df.camera_mp <= camera_mp_choice]
+if st.checkbox('Camera aperture'):
+    camera_aperture_choice = st.selectbox('f/n', camera_aperture_list)
+    df = df[df.camera_aperture <= camera_aperture_choice]
+if st.checkbox('Optical Image Stabilization'):
+    df = df[df.camera_ois == 1]
 if st.checkbox('Maximum monitor'):
     monitor_choice = st.selectbox('Inch', monitor_list, index=monitor_index)
     df = df[df.monitor_inch <= monitor_choice]

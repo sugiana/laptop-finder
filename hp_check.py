@@ -17,7 +17,8 @@ columns = ['category', 'url', 'title', 'price', 'brand', 'processor',
            'processor_brand', 'graphic', 'graphic_brand', 'memory',
            'memory_gb', 'storage', 'storage_gb', 'monitor', 'monitor_inch',
            'usb', 'usb_c', 'nfc', 'compass', 'network_5g', 'battery',
-           'battery_mah', 'weight', 'weight_kg', 'stock', 'ai_duration']
+           'battery_mah', 'weight', 'weight_kg', 'camera', 'camera_mp',
+           'camera_aperture', 'camera_ois', 'stock', 'time', 'ai_duration']
 for index, row in orig_df.iterrows():
     print(f'#{index+1}')
     for column in columns:
@@ -38,7 +39,8 @@ orig_df = orig_df[orig_df.category == 'hp']
 orig_df = orig_df[orig_df.stock > 0]
 
 columns = ['brand', 'processor_brand', 'graphic_brand', 'memory_gb',
-           'storage_gb', 'is_new', 'battery_mah']
+           'storage_gb', 'battery_mah', 'camera_mp', 'camera_aperture',
+           'camera_ois', 'is_new']
 for column in columns:
     field = getattr(orig_df, column)
     df = orig_df[field.notnull()]

@@ -72,6 +72,8 @@ def clean_data(data: dict, column: str, nice_names: list, back_ref=dict()):
 
 def similarity_search(name: str, ref_dict: dict) -> str:
     name_lower = name.lower()
+    if not name_lower[1:]:
+        return name
     for ref_lower, ref in ref_dict.items():
         index = jaccard_index(name_lower, ref_lower)
         if index >= 0.3:
