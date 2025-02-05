@@ -26,14 +26,6 @@ for index, row in orig_df.iterrows():
         print(f'{column}: {value}')
     print()
 
-print('RINGKASAN KATEGORI')
-count = orig_df.groupby('category').size()
-df = count.reset_index()
-for index, row in df.iterrows():
-    name, count = row.values
-    print(f'{name} = {count} unit')
-print()
-
 print('RINGKASAN HP')
 orig_df = orig_df[orig_df.category == 'hp']
 orig_df = orig_df[orig_df.stock > 0]
