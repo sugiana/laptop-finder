@@ -2,9 +2,9 @@ import sys
 import os
 import json
 from argparse import ArgumentParser
+from datetime import datetime
 import pandas as pd
 from parser import BaseError
-from tools import file_time
 from tokopedia import ProductParser as TokopediaProductParser
 from macstore import ProductParser as MacstoreProductParser
 
@@ -12,6 +12,11 @@ from macstore import ProductParser as MacstoreProductParser
 PARSER_CLASSES = dict(
     tokopedia=TokopediaProductParser,
     macstore=MacstoreProductParser)
+
+
+def file_time(filename: str) -> datetime:
+    mtime = os.path.getmtime(filename)
+    return datetime.fromtimestamp(mtime)
 
 
 def to_csv(parser: str, download_dir: str, output_file: str):

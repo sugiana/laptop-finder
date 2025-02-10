@@ -9,9 +9,9 @@ def concat(category: str):
     if os.path.exists(output):
         os.remove(output)
     csv_files = glob(f'{category}-*.csv')
-    print('Menggabungkan', ', '.join(csv_files))
     df_list = []
     for csv_file in csv_files:
+        print('Gabung file', csv_file)
         df = pd.read_csv(csv_file)
         df = df[df.category == category]
         df_list.append(df)

@@ -35,10 +35,15 @@ for url in cf['url'].strip().splitlines():
         os.remove(filename)
     print('Hapus', download_dir)
     os.rmdir(download_dir)
+    # Hapus daftar URL produk
+    csv_file = download_dir + '.csv'
+    if os.path.exists(csv_file):
+        os.remove(csv_file)
 
 for filename in csv_files:
-    print('Hapus', filename)
-    os.remove(filename)
+    if os.path.exists(filename):
+        print('Hapus', filename)
+        os.remove(filename)
 filename = cf['category'] + '.csv'
 if os.path.exists(filename):
     print('Hapus', filename)

@@ -1,103 +1,69 @@
-import os
-import re
-import json
-import unicodedata
-from hashlib import md5
-from datetime import datetime
-from jaccard_index.jaccard import jaccard_index
-import pandas as pd
+from configparser import RawConfigParser
 
 
-# https://stackoverflow.com/questions/295135/turn-a-string-into-a-valid-filename
-def slugify(value, allow_unicode=False):
-    value = str(value)
-    if allow_unicode:
-        value = unicodedata.normalize('NFKC', value)
-    else:
-        value = unicodedata.normalize('NFKD', value).\
-                encode('ascii', 'ignore').decode('ascii')
-    value = re.sub(r'[^\w\s-]', '', value.lower())
-    return re.sub(r'[-\s]+', '-', value).strip('-_')
-
-
-SUFFIX_PROBLEMS = [',}']
-
-
-# https://kevinquinn.fun/blog/a-real-world-solution-to-escape-embedded-double-quotes-in-json/
-def sanitize_json_str(s: str, strict=False) -> dict:
-    s = s.lstrip("```json").rstrip("```").strip()
-    s = s.replace('\\', '')
-    while s.find(' \n') > -1:
-        s = s.replace(' \n', '\n')
-    while s.find('\n}') > -1:
-        s = s.replace('\n}', '}')
-    for suffix in SUFFIX_PROBLEMS:
-        p = len(suffix)
-        if s[-p:] == suffix:
-            s = s[:-p] + '}'
-            break
-    js_str = s
-    prev_pos = -1
-    curr_pos = 0
-    while curr_pos > prev_pos:
-        prev_pos = curr_pos
-        try:
-            return json.loads(js_str, strict=strict)
-        except json.JSONDecodeError as err:
-            curr_pos = err.pos
-            if curr_pos <= prev_pos:
-                raise err
-            prev_quote_index = js_str.rfind('"', 0, curr_pos)
-            js_str = js_str[:prev_quote_index] + "\\" + \
-                js_str[prev_quote_index:]
-
-
-def nice_str(s: str, ref: list):
-    lower_ref = [x.lower() for x in ref]
-    lower_s = s.lower()
-    if lower_s in lower_ref:
-        index = lower_ref.index(lower_s)
-        return ref[index]
-    return s
-
-
-def clean_data(data: dict, column: str, nice_names: list, back_ref=dict()):
-    if pd.isnull(data[column]):
-        return
-    data[column] = nice_str(data[column], nice_names)
-    for key, value in back_ref.items():
-        if data[column].find(key) > -1:
-            data[column] = value
-
-
-def similarity_search(name: str, ref_dict: dict) -> str:
-    name_lower = name.lower()
-    if not name_lower[1:]:
-        return name
-    for ref_lower, ref in ref_dict.items():
-        index = jaccard_index(name_lower, ref_lower)
-        if index >= 0.3:
-            return ref
-    return name
-
-
-def file_time(filename: str) -> datetime:
-    mtime = os.path.getmtime(filename)
-    return datetime.fromtimestamp(mtime)
-
-
-def md5sum_file(filename: str):
-    hash_md5 = md5()
-    with open(filename, 'rb') as f:
-        for chunk in iter(lambda: f.read(4096), b''):
-            hash_md5.update(chunk)
-    return hash_md5.hexdigest()
-
-
-def value2keys(d: dict):
+def config_from_dict(d: dict, prefix: str):
+    i = len(prefix)
     r = dict()
-    for key in d:
-        r[key] = key
-        for value in d[key]:
-            r[value] = key
+    for key, value in d.items():
+        if key.find(prefix) == 0:
+            name = key[i:]
+            r[name] = value
     return r
+
+
+def create_numeric_columns(cf: dict):
+    cf['numeric_columns'] = []
+    for unit in cf['numeric_units']:
+        suffix = '_' + unit
+        i = len(suffix)
+        for column in cf['columns']:
+            if column[-i:] == suffix:
+                cf['numeric_columns'].append(column)
+
+
+def get_brands(d: dict) -> (list, dict):
+    brands = list(d.keys())
+    alias = dict()
+    for key in d:
+        alias[key] = key
+        values = d[key].strip().split()
+        for value in values:
+            alias[value] = key
+    return brands, alias
+
+
+def create_brands(conf: RawConfigParser, cf: dict):
+    r = dict()
+    for section in conf.sections():
+        if section[-5:] != 'brand':
+            continue
+        column = section
+        keys, alias = get_brands(dict(conf.items(column)))
+        r[column] = (keys, alias)
+    if r:
+        cf['brands'] = r
+
+
+def read_conf(conf_file):
+    def to_list(key):
+        if (s := cf.get(key)):
+            if (r := s and s.strip().split()):
+                cf[key] = r
+                return r
+
+    conf = RawConfigParser()
+    # https://stackoverflow.com/questions/19359556/configparser-reads-capital-keys-and-make-them-lower-case
+    conf.optionxform = str
+    conf.read(conf_file)
+    cf = dict(conf.items('main'))
+    if (s := cf.get('role')):
+        cf['role'] = s.strip()
+    cf['prompt_template'] = cf['prompt_template'].strip()
+    cf['columns'] = cf['columns'].strip().split()
+    to_list('not_null_columns')
+    to_list('numeric_units') and create_numeric_columns(cf)
+    create_brands(conf, cf)
+    # Untuk check.py
+    to_list('count_columns')
+    to_list('min_max_columns')
+    return cf

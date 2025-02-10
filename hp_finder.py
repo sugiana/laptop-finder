@@ -35,14 +35,6 @@ def get_price(cols):
     return s
 
 
-def get_nfc(n):
-    return n and 'NFC' or ''
-
-
-def get_network_5g(n):
-    return n and '5G' or None
-
-
 csv_file = None
 for argv in sys.argv[1:]:
     if argv[-4:] == '.csv':
@@ -58,9 +50,9 @@ if not csv_file:
 COLUMNS = [
     'brand', 'title', 'price', 'processor', 'graphic', 'memory', 'memory_gb',
     'storage', 'storage_gb', 'monitor', 'monitor_inch', 'battery',
-    'battery_mah', 'network_5g', 'nfc', 'usb', 'usb_c', 'compass', 'weight',
-    'weight_kg', 'is_new', 'stock', 'processor_brand', 'graphic_brand',
-    'camera', 'camera_mp', 'camera_aperture', 'camera_ois']
+    'battery_mah', 'is_network_5g', 'is_nfc', 'usb', 'is_usb_c', 'is_compass',
+    'weight', 'weight_kg', 'is_new', 'stock', 'processor_brand',
+    'graphic_brand', 'camera', 'camera_mp', 'camera_aperture', 'is_camera_ois']
 
 SORT_BY = dict(
     price='Price',
@@ -149,18 +141,16 @@ price_max = int(choice_df.price.max() / price_step + 1) * price_step
 
 df = orig_df[COLUMNS].copy()
 df['title'] = orig_df.apply(get_title, axis='columns')
-df['nfc'] = df['nfc'].apply(get_nfc)
-df['network_5g'] = df['network_5g'].apply(get_network_5g)
 df.insert(3, 'price_rp', orig_df.apply(get_price, axis='columns'))
 df = df.sort_values(by=['price'])
 
 # Kolom
 # 1 nomor, 2 brand, 3 title, 4 price, 5 price_rp, 6 processor, 7 graphic,
 # 8 memory, 9 memory_gb, 10 storage, 11 storage_gb, 12 monitor,
-# 13 monitor_inch, 14 battery, 15 battery_mah, 16 network_5g, 17 nfc,
-# 18 usb, 19 usb_c, 20 compass, 21 weight, 22 weight_kg, 23 is_new, 24 stock,
-# 25 processor_brand, 26 graphic_brand, 27 camera, 28 camera_mp,
-# 29 camera_aperture, 30 camera_ois
+# 13 monitor_inch, 14 battery, 15 battery_mah, 16 network_5g, 17 is_nfc,
+# 18 usb, 19 is_usb_c, 20 is_compass, 21 weight, 22 weight_kg, 23 is_new,
+# 24 stock, 25 processor_brand, 26 graphic_brand, 27 camera, 28 camera_mp,
+# 29 camera_aperture, 30 is_camera_ois
 
 # Sembunyikan nomor, dan lainnya yang tidak nyaman
 hide_columns = [2, 4, 9, 11, 13, 15, 19, 22, 23, 24, 25, 26, 28, 29, 30]
@@ -215,18 +205,18 @@ if st.checkbox('Camera aperture'):
     camera_aperture_choice = st.selectbox('f/n', camera_aperture_list)
     df = df[df.camera_aperture <= camera_aperture_choice]
 if st.checkbox('Optical Image Stabilization'):
-    df = df[df.camera_ois == 1]
+    df = df[df.is_camera_ois.notnull()]
 if st.checkbox('Maximum monitor'):
     monitor_choice = st.selectbox('Inch', monitor_list, index=monitor_index)
     df = df[df.monitor_inch <= monitor_choice]
 if st.checkbox('5G'):
-    df = df[df.network_5g.str.contains('5G', na=False, case=False)]
+    df = df[df.is_network_5g.notnull()]
 if st.checkbox('NFC'):
-    df = df[df.nfc.str.contains('NFC', na=False, case=False)]
+    df = df[df.is_nfc.notnull()]
 if st.checkbox('USB Type-C'):
-    df = df[df.usb_c == 1]
+    df = df[df.is_usb_c.notnull()]
 if st.checkbox('Compass'):
-    df = df[df.compass.notnull()]
+    df = df[df.is_compass.notnull()]
 if st.checkbox('Maximum weight'):
     weight_choice = st.selectbox('Kg', weight_list, index=weight_index)
     df = df[df.weight_kg <= weight_choice]

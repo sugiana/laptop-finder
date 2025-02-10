@@ -18,10 +18,9 @@ Adapun prosesnya sebagai berikut:
 3. ``to_category.py``: penerjemah file CSV tadi menjadi fitur-fitur sesuai
    kategori laptop seperti berapa RAM-nya, apa merek kartu grafis, berapa VRAM,
    dst. Di sini AI digunakan.
-4. ``laptop_repair.py``: memperbaiki data yang diberikan AI
+4. ``repair.py``: memperbaiki data yang diberikan AI
 5. ``laptop_finder.py``: aplikasi `Streamlit <https://streamlit.io>`_ sebagai
    web server untuk kenyamanan memilih laptop sesuai kebutuhan
-
 
 Buatlah Python Virtual Environment::
 
@@ -33,9 +32,15 @@ Untuk mengunduh HTML maka kita membutuhkan
 terpasang jalankan::
 
     $ mkdir -p /home/sugiana/tmp/tokopedia-nvidiageforcelt
-    $ ~/env/bin/python downloader.py --download-dir=/home/sugiana/tmp/tokopedia-nvidiageforcelt --url=https://www.tokopedia.com/nvidiageforcelt/product
+    $ ~/env/bin/python downloader.py --url=https://www.tokopedia.com/nvidiageforcelt/product --download-dir=/home/sugiana/tmp/tokopedia-nvidiageforcelt
 
-Setiap produk akan tersimpan di sebuah file HTML.
+Proses ini akan membuat:
+
+1. File ``/home/sugiana/tmp/tokopedia-nvidiageforcelt.csv`` berisi daftar
+   tautan produk. Tujuannya sebagai *cache* yaitu bila ada masalah di tengah
+   proses maka tidak perlu lagi membaca halaman awal, cukup membaca file ini
+   untuk mendapatkan daftarnya.
+2. Setiap produk akan tersimpan di sebuah file HTML.
 
 Selanjutnya seluruh file HTML itu akan disimpan dalam sebuah file CSV dengan cara::
 
@@ -44,33 +49,39 @@ Selanjutnya seluruh file HTML itu akan disimpan dalam sebuah file CSV dengan car
 Untuk mendapatkan spesifikasi laptop secara terstruktur maka kita akan
 **bertanya ke AI** yaitu `Ollama <https://ollama.com>`_. Pastikan Anda sudah
 memasangnya. Adapun model yang digunakan adalah
-`gemma2:9b <https://ollama.com/library/gemma2:9b>`_.
+`gemma2:9b <https://ollama.com/library/gemma2:9b>`_. Model ini teruji lebih
+memahami spesifikasi hardware ketimbang
+`llama3.1:8b <https://ollama.com/library/llama3.1:8b>`_ atau
+`deepseek-r1:8b <https://ollama.com/library/deepseek-r1:8b>`_.
 
 Jalankan::
 
-    $ ~/env/bin/python to_category.py --category=laptop --input-file=tokopedia-nvidiageforcelt.csv --output-file=laptop-nvidiageforcelt.csv
+    $ ~/env/bin/python to_category.py laptop.ini --input-file=tokopedia-nvidiageforcelt.csv --output-file=laptop-nvidiageforcelt.csv
 
-Gunakan opsi ``--help`` untuk melihat kemungkinan lainnya. Misalkan ingin tanya ke Gemini.
+Gunakan opsi ``--help`` untuk melihat kemungkinan lainnya. Misalkan tambah
+``--limit=5`` yang berarti hanya membaca 5 tautan saja. Pembatasan ini biasanya
+dilakukan selama uji coba untuk memastikan apakah pertanyaan yang diajukan ke
+AI dijawab dengan benar.
 
-Setelah selesai lakukan bersih-bersih agar konsisten, contoh:
+Setelah selesai lakukan bersih-bersih agar konsisten seperti:
 
-1. Terkait brand, contoh: LENOVO menjadi Lenovo
+1. Terkait brand yaitu mengubah LENOVO menjadi Lenovo
 2. Terkait angka maka diuji dengan ``float()``, jika gagal maka dihapus nilainya
 
 Untuk melakukannya jalankan::
 
-    $ ~/env/bin/python laptop_repair.py laptop-nvidiageforcelt.csv
+    $ ~/env/bin/python repair.py laptop.ini --csv-file=laptop-nvidiageforcelt.csv
 
 Untuk melihat hasil berikut ringkasannya::
 
-    $ ~/env/bin/python laptop_check.py laptop-nvidiageforcelt.csv
+    $ ~/env/bin/python check.py laptop.ini --csv-file=laptop-nvidiageforcelt.csv
 
 Setelah selesai aktifkan web server::
 
     $ ~/env/bin/streamlit run laptop_finder.py laptop-nvidiageforcelt.csv
 
-Nanti otomatis Chrome aktif membuka
-`http://localhost:8501 <http://localhost:8501>`_. Selanjutnya pilih kriteria laptop yang dibutuhkan.
+Nanti otomatis Chrome membuka `http://localhost:8501 <http://localhost:8501>`_.
+Selanjutnya pilih kriteria laptop yang dibutuhkan.
 
 
 Menggabungkan File CSV
@@ -79,10 +90,10 @@ Menggabungkan File CSV
 Sekarang kita unduh daftar laptop dari **toko lainnya**, masih di Tokopedia::
 
     $ mkdir /home/sugiana/tmp/tokopedia-lenovojakarta
-    $ ~/env/bin/python downloader.py --download-dir=/home/sugiana/tmp/tokopedia-lenovojakarta --url=https://www.tokopedia.com/lenovojakarta/product
+    $ ~/env/bin/python downloader.py --url=https://www.tokopedia.com/lenovojakarta/product --download-dir=/home/sugiana/tmp/tokopedia-lenovojakarta
     $ ~/env/bin/python to_csv.py --download-dir=/home/sugiana/tmp/tokopedia-lenovojakarta --parser=tokopedia --output-file=tokopedia-lenovojakarta.csv
-    $ ~/env/bin/python to_category.py --category=laptop --input-file=tokopedia-lenovojakarta.csv --output-file=laptop-lenovojakarta.csv
-    $ ~/env/bin/python laptop_repair.py laptop-lenovojakarta.csv
+    $ ~/env/bin/python to_category.py laptop.ini --input-file=tokopedia-lenovojakarta.csv --output-file=laptop-lenovojakarta.csv
+    $ ~/env/bin/python repair.py laptop.ini --csv-file=laptop-lenovojakarta.csv
 
 Gabungkan dengan yang tadi::
 
@@ -96,23 +107,33 @@ Dia akan menggabungkan seluruh file dengan pola ``laptop-*.csv`` dan menyimpanny
 Tanya Gemini
 ------------
 
-Jika VRAM pada GPU terbatas yang bisa membuat AI lama menjawab maka kita bisa
+Jika VRAM pada GPU terbatas - yang bisa membuat AI lama menjawab - maka kita bisa
 gunakan `Gemini <https://ai.google.dev/gemini-api/docs/api-key?hl=id>`_. Ia
 menawarkan gratis pemakaian selama 1 bulan.
 
-Simpanlah API Key di file ``gemini-key.txt`` lalu jalankan::
+Buatlah file ``live-laptop.ini``::
 
-    $ ~/env/bin/python to_category_by_gemini.py --category=laptop --input-file=tokopedia-nvidiageforcelt.csv --output-file=laptop-nvidiageforcelt.csv --key=gemini-key.txt
+    $ cp laptop.ini live-laptop.ini
 
-Perintah tersebut juga menjalankan ``to_category.py``. Tugas tambahannya adalah menjaga agar tidak terjadi *quota error*.
+Edit ``live-laptop.ini``, buka belenggu pada bagian ``gemini_``::
 
-Lagi, perbaiki nilai-nilainya agar konsisten::
+    gemini_url = https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=YOUR-API-KEY
 
-    $ ~/env/bin/python laptop_repair.py laptop-nvidiageforcelt.csv
+Ubahlah ``YOUR-API-KEY`` dengan nilai yang diperoleh dari
+`web Gemini <https://ai.google.dev/gemini-api/docs/api-key?hl=id>`_.
+
+Jalankan::
+
+    $ ~/env/bin/python to_category.py live-laptop.ini --input-file=tokopedia-nvidiageforcelt.csv --output-file=laptop-nvidiageforcelt.csv
+
+Langkah selanjutnya masih sama::
+
+    $ ~/env/bin/python repair.py live-laptop.ini --csv-file=laptop-nvidiageforcelt.csv
 
 Jangan lupa gabungkan dengan yang lain agar menjadi ``laptop.csv``::
 
     $ ~/env/bin/python csv_concat.py laptop 
+
 
 Handphone
 ---------
@@ -121,27 +142,23 @@ Untuk kategori HP langkahnya juga mirip. Intinya mengganti kata ``laptop`` menja
 
     $ mkdir /home/sugiana/tmp/tokopedia-oppo
     $ ~/env/bin/python downloader.py --url=https://www.tokopedia.com/oppo/product --download-dir=/home/sugiana/tmp/tokopedia-oppo
-    $ ~/env/bin/python to_csv --download-dir=/home/sugiana/tmp/tokopedia-oppo --output-file=tokopedia-oppo.csv
-    $ ~/env/bin/python to_category.py --category=hp --input-file=tokopedia-oppo.csv --output-file=hp-oppo.csv
-
-Atau kalau tanya Gemini::
-
-    $ ~/env/bin/python to_category_by_gemini.py --category=hp --input-file=tokopedia-oppo.csv --output-file=hp-oppo.csv --key=gemini-key.txt
+    $ ~/env/bin/python to_csv.py --download-dir=/home/sugiana/tmp/tokopedia-oppo --output-file=tokopedia-oppo.csv
+    $ ~/env/bin/python to_category.py hp.ini --input-file=tokopedia-oppo.csv --output-file=hp-oppo.csv
 
 Perbaiki nilainya agar konsisten::
 
-    $ ~/env/bin/python hp_repair.py hp-oppo.csv
+    $ ~/env/bin/python repair.py hp.ini --csv-file=hp-oppo.csv
 
 Lihat hasilnya::
 
-    $ ~/env/bin/python hp_check.py hp-oppo.csv
+    $ ~/env/bin/python check.py hp.ini --csv-file=hp-oppo.csv
 
 Aktifkan web server::
 
     $ ~/env/bin/streamlit run hp_finder.py hp-oppo.csv
 
 Cobalah unduh toko HP lainnya. Lihat Referensi di bawah untuk URL-nya. Jika sudah sampai
-tahap ``hp_repair.py`` maka gabungkan::
+tahap ``repair.py`` maka gabungkan::
 
     $ ~/env/bin/python csv_concat.py hp
 
@@ -163,21 +180,12 @@ Sesuaikanlah nilai ``base_download_dir``. Kemudian jalankan::
 
 Untuk handphone ada di file ``hp.ini``.
 
-Script ini hanya akan mengunduh HTML bila **direktori toko** terkait kosong. Contoh
-direktori toko adalah ``/home/sugiana/tmp/tokopedia-nvidiageforcelt``. Jadi
-bila ada kesalahan di proses selanjutnya - lalu kita jalankan kembali - maka
-script tidak akan mengunduh lagi.
-
 Jika Anda peduli dengan perubahan harga, stok, atau data lainnya maka
 **keesokan harinya** hapus dulu semua data dengan cara (**HATI-HATI**)::
 
-    $ ~/env/bin/python remove_all_data.py live-laptop.ini
+    $ ~/env/bin/python remove_data.py live-laptop.ini
 
-Bila tidak dihapus maka script tidak akan memperbarui:
-
-1. Saat proses unduh dia berpegang pada keterisian direktori toko.
-2. Saat penerjemahan file HTML dia berpegang pada URL. Bila sudah ada di file
-   CSV maka diabaikan, tidak ada proses bertanya ke AI.
+Bila tidak dihapus maka script tidak akan memperbarui.
 
 Kadang AI memberikan format JSON yang kurang pas - misalnya kelebihan karakter
 koma - maka cukup jalankan lagi. Biasanya AI memberi jawaban berbeda dengan

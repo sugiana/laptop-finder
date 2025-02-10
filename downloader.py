@@ -7,9 +7,21 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
-from tools import slugify
+import pandas as pd
 from tokopedia import ListParser as TokopediaListParser
 from macstore import ListParser as MacstoreListParser
+
+
+# https://stackoverflow.com/questions/295135/turn-a-string-into-a-valid-filename
+def slugify(value, allow_unicode=False):
+    value = str(value)
+    if allow_unicode:
+        value = unicodedata.normalize('NFKC', value)
+    else:
+        value = unicodedata.normalize('NFKD', value).\
+                encode('ascii', 'ignore').decode('ascii')
+    value = re.sub(r'[^\w\s-]', '', value.lower())
+    return re.sub(r'[-\s]+', '-', value).strip('-_')
 
 
 def nice_filename(url):
@@ -40,9 +52,7 @@ class Browser:
             x += 1
             height += height
 
-    def save(self, url):
-        filename = nice_filename(url)
-        full_path = os.path.join(self.download_dir, filename)
+    def save(self, url, full_path):
         while True:
             try:
                 with open(full_path, 'w') as f:
@@ -59,39 +69,54 @@ class Browser:
 
     def save_list(self, urls):
         for url in urls:
+            filename = nice_filename(url)
+            full_path = os.path.join(self.download_dir, filename)
+            if os.path.exists(full_path):
+                print(f'File {full_path} sudah ada.')
+                continue
             self.driver.get(url)
             self.scroll(2)
-            self.save(url)
+            self.save(url, full_path)
 
     def run(self):
         p = urlparse(self.url)
         cls = self.parser_classes.get(p.netloc)
         if not cls:
             raise Exception(f'Parser untuk {p.netloc} belum tersedia')
-        parser = cls(self.driver)
-        page_urls = []
+        csv_file = self.download_dir + '.csv'
         product_urls = []
-        url = self.url
-        while True:
-            if url in page_urls:
-                print(f'{url} terulang.')
-                break
-            print(f'Product list {url}')
-            self.driver.get(url)
-            self.scroll()
-            if parser.is_page_not_found():
-                print(f'{url} tidak ada.')
-                break
-            is_list = parser.is_product_list()
-            if is_list:
-                page_urls.append(url)
-                product_urls += parser.get_product_urls()
-            else:
-                product_urls += [url]
-            url = parser.next_page_url()
-            if not url:
-                print('Tidak ada halaman berikutnya.')
-                break
+        if os.path.exists(csv_file):
+            df = pd.read_csv(csv_file)
+            for index, values in df.iterrows():
+                product_urls.append(values['url'])
+        else:
+            parser = cls(self.driver)
+            page_urls = []
+            url = self.url
+            while True:
+                if url in page_urls:
+                    print(f'{url} terulang.')
+                    break
+                print(f'Product list {url}')
+                self.driver.get(url)
+                self.scroll()
+                if parser.is_page_not_found():
+                    print(f'{url} tidak ada.')
+                    break
+                if parser.is_product_list():
+                    page_urls.append(url)
+                    product_urls += parser.get_product_urls()
+                else:
+                    product_urls += [url]
+                url = parser.next_page_url()
+                if not url:
+                    print('Tidak ada halaman berikutnya.')
+                    break
+            if product_urls:
+                data = dict(url=product_urls)
+                df = pd.DataFrame(data)
+                df.to_csv(csv_file, index=False)
+                print('Daftar URL produk sudah disimpan di', csv_file)
         self.save_list(product_urls)
         self.driver.quit()
 
