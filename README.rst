@@ -115,12 +115,13 @@ Buatlah file ``live-laptop.ini``::
 
     $ cp laptop.ini live-laptop.ini
 
-Edit ``live-laptop.ini``, buka belenggu pada bagian ``gemini_``::
+Edit ``live-laptop.ini``, buka belenggu ``gemini_url``::
 
     gemini_url = https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=YOUR-API-KEY
 
 Ubahlah ``YOUR-API-KEY`` dengan nilai yang diperoleh dari
-`web Gemini <https://ai.google.dev/gemini-api/docs/api-key?hl=id>`_.
+`web Gemini <https://ai.google.dev/gemini-api/docs/api-key?hl=id>`_. Jika baris
+ini aktif maka konfigurasi ``ollama_`` diabaikan.
 
 Jalankan::
 
@@ -191,8 +192,37 @@ Kadang AI memberikan format JSON yang kurang pas - misalnya kelebihan karakter
 koma - maka cukup jalankan lagi. Biasanya AI memberi jawaban berbeda dengan
 format JSON yang benar.
 
-Hasilnya bisa dilihat di `Laptop Finder <https://s.id/laptop-dijual>`_ dan
-`HP Finder <https://s.id/hp-dijual>`_.
+Hasilnya bisa dilihat di:
+
+1. `Laptop Finder <https://s.id/laptop-dijual>`_
+2. `HP Finder <https://s.id/hp-dijual>`_
+3. `Motherboard Finder <https://s.id/mobo-dijual>`_
+
+
+Perbaikan
+---------
+
+Misalkan saat kita melihat-lihat data melalui web menemukan kesalahan.
+**Setelah melakukan perbaikan** cobalah hapus salah satu tautan yang bermasalah tadi::
+
+    $ ~/env/bin/python remove_url.py --csv-file=hp-samsung.csv --url=https://www.tokopedia.com/samsung/samsung-galaxy-a05s-6-128gb-silver-e3ea5
+
+Tujuannya agar lebih cepat pembuktiannya. Kemudian jalankan lagi proses pembacaan spesifikasi::
+
+    $ ~/env/bin/python live-hp.ini to_category.py --input-file=tokopedia-samsung.csv --output-file=hp-samsung.csv --filter-url=https://www.tokopedia.com/samsung/samsung-galaxy-a05s-6-128gb-silver-e3ea5
+    $ ~/env/bin/python repair.py live-hp.ini --csv-file=hp-samsung.csv
+
+Lihat hasilnya apa sudah sesuai::
+
+    $ ~/env/bin/python check.py live-hp.ini --csv-file=hp-samsung.csv --filter-url=https://www.tokopedia.com/samsung/samsung-galaxy-a05s-6-128gb-silver-e3ea5
+
+Kalau sudah sesuai gabungkan lagi semuanya::
+
+    $ ~/env/bin/python csv_concat.py hp
+
+Lalu lihat hasilnya di web::
+
+    $ ~/env/bin/streamlit run hp_finder.py
 
 Semoga berhasil.
 
