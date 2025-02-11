@@ -5,29 +5,25 @@ from tools import read_conf
 
 
 help_boolean = 'lebih dari satu pisahkan dengan koma'
+help_filter = 'contoh: stock >= 1'
 
 pars = ArgumentParser()
 pars.add_argument('conf')
 pars.add_argument('--csv-file')
-pars.add_argument('--filter-url')
-pars.add_argument('--filter-boolean', help=help_boolean)
+pars.add_argument('--filter', help=help_filter)
 option = pars.parse_args(sys.argv[1:])
 
 cf = read_conf(option.conf)
 
 orig_df = pd.read_csv(option.csv_file)
 orig_df = orig_df[orig_df.category == cf['category']]
-if option.filter_url:
-    orig_df = orig_df[orig_df.url == option.filter_url]
-if option.filter_boolean:
-    for column in option.filter_boolean.split(','):
-        field = getattr(orig_df, column)
-        orig_df = orig_df[field.notnull()]
+if option.filter:
+    orig_df = orig_df.query(option.filter)
 
 columns = ['url', 'title'] + list(cf['columns']) + \
-          ['stock', 'time', 'ai_duration']
+          ['is_new', 'stock', 'time', 'ai_duration']
 for index, row in orig_df.iterrows():
-    print(f'#{index+1}')
+    print(f'#{index}')
     for column in columns:
         value = row[column]
         print(f'{column}: {[value]}')

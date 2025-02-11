@@ -6,7 +6,7 @@ class Ollama(AI):
     def ask(self, prompt: str) -> str:  # Override
         ai = self.conf['ai']
         messages = []
-        if self.conf['role']:
+        if self.conf.get('role'):
             system_role = dict(role='system', content=self.conf['role'])
             messages.append(system_role)
         d = dict(role='user', content=prompt)

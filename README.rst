@@ -214,7 +214,7 @@ Tujuannya agar lebih cepat pembuktiannya. Kemudian jalankan lagi proses pembacaa
 
 Lihat hasilnya apa sudah sesuai::
 
-    $ ~/env/bin/python check.py live-hp.ini --csv-file=hp-samsung.csv --filter-url=https://www.tokopedia.com/samsung/samsung-galaxy-a05s-6-128gb-silver-e3ea5
+    $ ~/env/bin/python check.py live-hp.ini --csv-file=hp-samsung.csv --filter="url == 'https://www.tokopedia.com/samsung/samsung-galaxy-a05s-6-128gb-silver-e3ea5'"
 
 Kalau sudah sesuai gabungkan lagi semuanya::
 
