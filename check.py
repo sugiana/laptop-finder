@@ -24,7 +24,8 @@ if option.filter_boolean:
         field = getattr(orig_df, column)
         orig_df = orig_df[field.notnull()]
 
-columns = list(cf['columns']) + ['stock', 'time', 'ai_duration']
+columns = ['url', 'title'] + list(cf['columns']) + \
+          ['stock', 'time', 'ai_duration']
 for index, row in orig_df.iterrows():
     print(f'#{index+1}')
     for column in columns:

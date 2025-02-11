@@ -126,9 +126,7 @@ class AI:
             d = sanitize_json_str(s)
             for index, column in enumerate(self.conf['columns']):
                 key = str(index+1)
-                if key not in d:
-                    break
-                data[column] = d[key]
+                data[column] = d.get(key)
             if data['category'].lower().find('ya') == 0:
                 data['category'] = self.conf['category']
             else:
