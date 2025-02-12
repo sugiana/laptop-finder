@@ -55,7 +55,7 @@ class Browser:
     def save(self, url, full_path):
         while True:
             try:
-                with open(full_path, 'w') as f:
+                with open(full_path, 'w', encoding='utf-8') as f:
                     f.write(self.driver.page_source)
                     print(f'File {full_path} tersimpan.')
                 break
