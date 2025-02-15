@@ -35,6 +35,12 @@ class HTML2Text(HTMLParser):
             self.lines.append(s)
 
 
+class BaseListParser:
+    def __init__(self, driver, is_ready_stock=True):
+        self.driver = driver
+        self.is_ready_stock = is_ready_stock
+
+
 class BaseProductParser:
     def __init__(self, html):
         self.sel = Selector(html)
@@ -81,12 +87,12 @@ def sanitize_json_str(s: str, strict=False) -> dict:
 class AI:
     def __init__(
             self, conf: dict, input_file: str, output_file: str, limit=0,
-            filter_url=''):
+            filter_=''):
         self.conf = conf
         self.input_file = input_file
         self.output_file = output_file
         self.limit = limit
-        self.filter_url = filter_url
+        self.filter_ = filter_
 
     # Override, please
     def ask(self, prompt) -> str:
@@ -94,10 +100,12 @@ class AI:
 
     def parse(self):
         input_df = pd.read_csv(self.input_file)
+        if self.conf.get('filter'):
+            input_df = input_df.query(self.conf['filter'])
+        if self.filter_:
+            input_df = input_df.query(self.filter_)
         if self.limit:
             input_df = input_df[:self.limit]
-        if self.filter_url:
-            input_df = input_df[input_df.url == self.filter_url]
         if os.path.exists(self.output_file):
             output_df = pd.read_csv(self.output_file)
         else:
@@ -119,10 +127,9 @@ class AI:
             print(prompt)
             s = self.ask(prompt)
             print(s)
-            durasi = time() - awal
-            data['ai_duration'] = durasi
-            if durasi > 0.009:
+            if (durasi := time() - awal) > 0.009:
                 print(format(durasi, '.2f'), 'detik')
+            data['ai_duration'] = durasi
             d = sanitize_json_str(s)
             for index, column in enumerate(self.conf['columns']):
                 key = str(index+1)

@@ -31,6 +31,8 @@ class Gemini(AI):
             d = r.json()
             s = d['candidates'][0]['content']['parts'][0]['text']
             return s.rstrip()
+        print('*' * 20)
+        print(r.text)
         if r.status_code == 429:
             raise ResourceExhaustedErr(r)
         raise HttpErr(r)
@@ -66,6 +68,7 @@ class Gemini(AI):
             if is_error:
                 print(f'Tunggu {wait_seconds} detik ...')
                 sleep(wait_seconds)
+                continue
             new_md5 = md5sum_file(self.output_file)
             if old_md5 == new_md5:
                 if new_md5:

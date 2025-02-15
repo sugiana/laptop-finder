@@ -45,21 +45,29 @@ def create_brands(conf: RawConfigParser, cf: dict):
 
 
 def read_conf(conf_file):
+    def to_str(key):
+        if (s := cf.get(key)) and (s := s.strip()):
+            cf[key] = s
+
     def to_list(key):
-        if (s := cf.get(key)):
-            if (r := s and s.strip().split()):
-                cf[key] = r
-                return r
+        if (s := cf.get(key)) and (s := s.strip()) and (r := s.split()):
+            cf[key] = r
+            return True
 
     conf = RawConfigParser()
     # https://stackoverflow.com/questions/19359556/configparser-reads-capital-keys-and-make-them-lower-case
     conf.optionxform = str
     conf.read(conf_file)
     cf = dict(conf.items('main'))
-    if (s := cf.get('role')):
-        cf['role'] = s.strip()
+    # Untuk downloader.py & to_category.py
+    to_str('filter')
+    if cf.get('filter', '').find('stock > 0') > -1:
+        cf['is_ready_stock'] = True
+    # Untuk to_category.py
     cf['prompt_template'] = cf['prompt_template'].strip()
     cf['columns'] = cf['columns'].strip().split()
+    to_str('role')
+    # Untuk repair.py
     to_list('not_null_columns')
     to_list('numeric_units') and create_numeric_columns(cf)
     create_brands(conf, cf)

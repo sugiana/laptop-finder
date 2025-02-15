@@ -44,6 +44,7 @@ for column in orig_df.columns:
     count = len(df)
     print(f'{column} = {count} unit')
 
+# Group by
 for column in cf.get('count_columns', []):
     field = getattr(orig_df, column)
     df = orig_df[field.notnull()]
@@ -58,8 +59,11 @@ for column in cf.get('count_columns', []):
 # Min & Max
 for column in cf.get('min_max_columns', []):
     field = getattr(orig_df, column)
-    df = orig_df[field > 0]
+    df = orig_df[field.notnull()]
     field = getattr(df, column)
     min_ = field.min()
     max_ = field.max()
-    print(f'{column}: {min_:,} - {max_:,}')
+    if column in cf.get('numeric_columns', []):
+        print(f'{column}: {min_:,} - {max_:,}')
+    else:
+        print(f'{column}: {min_} - {max_}')

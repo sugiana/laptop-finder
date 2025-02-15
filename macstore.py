@@ -3,20 +3,18 @@ import json
 from parsel import Selector
 from parser import (
     HTML2Text,
+    BaseListParser,
     BaseProductParser,
     )
 
 
-XPATH_PRODUCT = '//a[contains(@class,"woocommerce-LoopProduct-link")]/@href'
+XPATH_LIST = '//a[contains(@class,"woocommerce-LoopProduct-link")]/@href'
 
 
-class ListParser:
-    def __init__(self, driver):
-        self.driver = driver
-
+class ListParser(BaseListParser):
     def get_product_urls(self):
         sel = Selector(self.driver.page_source)
-        return [str(x) for x in sel.xpath(XPATH_PRODUCT)]
+        return [str(x) for x in sel.xpath(XPATH_LIST)]
 
     def next_page_url(self):
         pass

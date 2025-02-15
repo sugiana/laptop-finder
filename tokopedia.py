@@ -1,30 +1,42 @@
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
+from parsel import Selector
 from parser import (
     HTML2Text,
+    BaseListParser,
     BaseProductParser,
     UrlNotFound,
     DescriptionNotFound
     )
 
 
-XPATH_PRODUCT = '//div[contains(@data-testid,"divProductWrapper")]//a'
+XPATH_LIST = '//div[contains(@data-testid,"divProductWrapper")]//a'
 XPATH_NEXT = '//a[@data-testid="btnShopProductPageNext"]'
 
 
-class ListParser:
-    def __init__(self, driver):
-        self.driver = driver
-
+class ListParser(BaseListParser):
     def get_product_urls(self):
+        self.is_stock = True
         urls = []
-        for xs in self.driver.find_elements(By.XPATH, XPATH_PRODUCT):
+        self.is_stock = True
+        for xs in self.driver.find_elements(By.XPATH, XPATH_LIST):
+            # Apakah hanya membaca produk yang ada stoknya ?
+            if self.is_ready_stock:
+                html = xs.get_attribute('innerHTML')
+                if html.find('divImgProductOverlay') > -1:
+                    # Nanti dibaca next_page_urls(). Jika ketemu produk yang
+                    # tidak ada stoknya maka jangan dilanjutkan karena
+                    # produk-produk berikutnya pasti juga sudah habis.
+                    self.is_stock = False
+                    return urls
             url = xs.get_attribute('href')
             if url not in urls:
                 urls.append(url)
         return urls
 
     def next_page_url(self):
+        if not self.is_stock:
+            return
         try:
             xs = self.driver.find_element(By.XPATH, XPATH_NEXT)
             return xs.get_attribute('href')

@@ -18,9 +18,7 @@ def clean_category(data: dict, cf: dict):
         return
     for column in cf.get('not_null_columns', []):
         value = data[column]
-        if pd.isnull(value):
-            return
-        if value.lower().find('tidak') > -1:
+        if pd.isnull(value) or value.lower().find('tidak') > -1:
             data['category'] = 'lainnya'
 
 

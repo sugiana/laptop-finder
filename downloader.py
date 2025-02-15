@@ -35,9 +35,10 @@ class Browser:
         'www.tokopedia.com': TokopediaListParser,
         'macstore.id': MacstoreListParser}
 
-    def __init__(self, url, download_dir):
+    def __init__(self, url, download_dir, is_ready_stock=True):
         self.url = url
         self.download_dir = download_dir
+        self.is_ready_stock = is_ready_stock
         driver_manager = ChromeDriverManager()
         service = Service(driver_manager.install())
         opt = Options()
@@ -55,7 +56,7 @@ class Browser:
     def save(self, url, full_path):
         while True:
             try:
-                with open(full_path, 'w', encoding='utf-8') as f:
+                with open(full_path, 'w') as f:
                     f.write(self.driver.page_source)
                     print(f'File {full_path} tersimpan.')
                 break
@@ -90,7 +91,7 @@ class Browser:
             for index, values in df.iterrows():
                 product_urls.append(values['url'])
         else:
-            parser = cls(self.driver)
+            parser = cls(self.driver, self.is_ready_stock)
             page_urls = []
             url = self.url
             while True:
@@ -133,10 +134,18 @@ if __name__ == '__main__':
     download_dir = f'/home/sugiana/tmp/{marketplace}-{shop_name}'
     help_dir = f'default {download_dir}'
 
+    stock_choices = ['ready', 'all']
+    stock = stock_choices[0]
+    help_stock = f'Apakah unduh semua stok ? default: {stock}. '\
+                 'all berarti yang habis pun diunduh.'
+
     pars = ArgumentParser()
     pars.add_argument('--url', default=url, help=help_url)
     pars.add_argument('--download-dir', default=download_dir, help=help_dir)
+    pars.add_argument(
+        '--stock', choices=stock_choices, default=stock, help=help_stock)
     option = pars.parse_args(sys.argv[1:])
 
-    a = Browser(option.url, option.download_dir)
+    is_ready_stock = option.stock == 'ready'
+    a = Browser(option.url, option.download_dir, is_ready_stock)
     a.run()

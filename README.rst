@@ -17,7 +17,7 @@ Adapun prosesnya sebagai berikut:
    lainnya untuk disimpan ke file CSV
 3. ``to_category.py``: penerjemah file CSV tadi menjadi fitur-fitur sesuai
    kategori laptop seperti berapa RAM-nya, apa merek kartu grafis, berapa VRAM,
-   dst. Di sini AI digunakan.
+   dst. Di sini **AI digunakan**.
 4. ``repair.py``: memperbaiki data yang diberikan AI
 5. ``laptop_finder.py``: aplikasi `Streamlit <https://streamlit.io>`_ sebagai
    web server untuk kenyamanan memilih laptop sesuai kebutuhan
@@ -99,17 +99,24 @@ Gabungkan dengan yang tadi::
 
     $ ~/env/bin/python csv_concat.py laptop 
 
-Dia akan menggabungkan seluruh file dengan pola ``laptop-*.csv`` dan menyimpannya ke ``laptop.csv``. Dengan begitu perintah web servernya menjadi::
+Dia akan menggabungkan seluruh file dengan pola ``laptop-*.csv`` dan
+menyimpannya ke ``laptop.csv``. Dengan begitu perintah web servernya menjadi::
 
     $ ~/env/bin/streamlit run laptop_finder.py laptop.csv
+
+Atau cukup::
+
+    $ ~/env/bin/streamlit run laptop_finder.py
+
+yang secara default dia akan membaca ``laptop.csv``.
 
 
 Tanya Gemini
 ------------
 
-Jika VRAM pada GPU terbatas - yang bisa membuat AI lama menjawab - maka kita bisa
-gunakan `Gemini <https://ai.google.dev/gemini-api/docs/api-key?hl=id>`_. Ia
-menawarkan gratis pemakaian selama 1 bulan.
+Jika VRAM pada GPU terbatas - yang bisa membuat AI terlalu lama untuk menjawab -
+maka kita bisa gunakan `Gemini <https://ai.google.dev/gemini-api/docs/api-key?hl=id>`_.
+Ia menawarkan gratis pemakaian selama 1 bulan.
 
 Buatlah file ``live-laptop.ini``::
 
@@ -127,7 +134,10 @@ Jalankan::
 
     $ ~/env/bin/python to_category.py live-laptop.ini --input-file=tokopedia-nvidiageforcelt.csv --output-file=laptop-nvidiageforcelt.csv
 
-Langkah selanjutnya masih sama::
+Jika mendapatkan pesan kesalahan terkait kuota maka tunggu sekitar satu menit,
+lalu jalankan lagi.
+
+Jika sudah selesai langkah selanjutnya masih sama::
 
     $ ~/env/bin/python repair.py live-laptop.ini --csv-file=laptop-nvidiageforcelt.csv
 
@@ -158,14 +168,18 @@ Aktifkan web server::
 
     $ ~/env/bin/streamlit run hp_finder.py hp-oppo.csv
 
-Cobalah unduh toko HP lainnya. Lihat Referensi di bawah untuk URL-nya. Jika sudah sampai
-tahap ``repair.py`` maka gabungkan::
+Cobalah unduh toko HP lainnya. Lihat ``hp.ini`` untuk URL-nya. Jika sudah
+sampai tahap ``repair.py`` maka gabungkan::
 
     $ ~/env/bin/python csv_concat.py hp
 
 Nanti akan terbentuk ``hp.csv``. Aktifkan web server::
 
     $ ~/env/bin/streamlit run hp_finder.py hp.csv
+
+Atau cukup::
+
+    $ ~/env/bin/streamlit run hp_finder.py
 
 
 Rutinitas
@@ -175,11 +189,12 @@ Seluruh langkah untuk mendapatkan ``laptop.csv`` tadi telah terangkum dalam ``cr
 
     $ cp laptop.ini live-laptop.ini
 
-Sesuaikanlah nilai ``base_download_dir``. Kemudian jalankan::
+Sesuaikanlah nilai ``base_download_dir`` bila perlu. Kemudian jalankan::
 
     $ ~/env/bin/python crawler.py live-laptop.ini
 
-Untuk handphone ada di file ``hp.ini``.
+Untuk kategori lainnya ada di file ``hp.ini``, ``mobo.ini``, ``gpu.ini``, dan
+``storage.ini``. Tentu saja kita bisa membuat kategori lainnya. Tirulah.
 
 Jika Anda peduli dengan perubahan harga, stok, atau data lainnya maka
 **keesokan harinya** hapus dulu semua data dengan cara (**HATI-HATI**)::
@@ -189,7 +204,7 @@ Jika Anda peduli dengan perubahan harga, stok, atau data lainnya maka
 Bila tidak dihapus maka script tidak akan memperbarui.
 
 Kadang AI memberikan format JSON yang kurang pas - misalnya kelebihan karakter
-koma - maka cukup jalankan lagi. Biasanya AI memberi jawaban berbeda dengan
+koma - maka cukup **jalankan lagi**. Biasanya AI memberi jawaban berbeda dengan
 format JSON yang benar.
 
 Hasilnya bisa dilihat di:
@@ -197,6 +212,8 @@ Hasilnya bisa dilihat di:
 1. `Laptop Finder <https://s.id/laptop-dijual>`_
 2. `HP Finder <https://s.id/hp-dijual>`_
 3. `Motherboard Finder <https://s.id/mobo-dijual>`_
+4. `GPU Finder <https://gpu-finder.streamlit.app>`_
+5. `Storage Finder <https://storage-finder.streamlit.app>`_
 
 
 Perbaikan
@@ -205,11 +222,11 @@ Perbaikan
 Misalkan saat kita melihat-lihat data melalui web menemukan kesalahan.
 **Setelah melakukan perbaikan** cobalah hapus salah satu tautan yang bermasalah tadi::
 
-    $ ~/env/bin/python remove_url.py --csv-file=hp-samsung.csv --url=https://www.tokopedia.com/samsung/samsung-galaxy-a05s-6-128gb-silver-e3ea5
+    $ ~/env/bin/python remove_by_filter.py --csv-file=hp-samsung.csv --filter="url == 'https://www.tokopedia.com/samsung/samsung-galaxy-a05s-6-128gb-silver-e3ea5'"
 
 Tujuannya agar lebih cepat pembuktiannya. Kemudian jalankan lagi proses pembacaan spesifikasi::
 
-    $ ~/env/bin/python live-hp.ini to_category.py --input-file=tokopedia-samsung.csv --output-file=hp-samsung.csv --filter-url=https://www.tokopedia.com/samsung/samsung-galaxy-a05s-6-128gb-silver-e3ea5
+    $ ~/env/bin/python to_category.py live-hp.ini --input-file=tokopedia-samsung.csv --output-file=hp-samsung.csv --filter="url == 'https://www.tokopedia.com/samsung/samsung-galaxy-a05s-6-128gb-silver-e3ea5'"
     $ ~/env/bin/python repair.py live-hp.ini --csv-file=hp-samsung.csv
 
 Lihat hasilnya apa sudah sesuai::
@@ -225,35 +242,3 @@ Lalu lihat hasilnya di web::
     $ ~/env/bin/streamlit run hp_finder.py
 
 Semoga berhasil.
-
-
-Referensi
----------
-
-Kategori ``laptop``:
-
-- `NVIDIA Geforce Laptop <https://www.tokopedia.com/nvidiageforcelt/product>`_
-- `Lenovo Authorized Jakarta Pusat <https://www.tokopedia.com/lenovojakarta/product>`_
-- `Dell Premium Official <https://www.tokopedia.com/dell-premium-official/product>`_
-- `Dell Official Store <https://www.tokopedia.com/dellflagship/product>`_
-- `ASUS Official Store <https://www.tokopedia.com/asus/product>`_
-- `Mac Store Indonesia <https://macstore.id/product-category/macbook>`_
-- `MSI Official Store <https://www.tokopedia.com/msi-official/product>`_
-- `HP Official <https://www.tokopedia.com/hp/etalase/semua-laptop>`_
-- `Acer Authorized Store Jakarta <https://www.tokopedia.com/acer-jakarta/product>`_
-- `Axioo Indonesia <https://www.tokopedia.com/axioo-indonesia/product>`_
-- `Zyrex Official Store <https://www.tokopedia.com/zyrex/product>`_
-- `Glory Computerr <https://www.tokopedia.com/glorycomputerr/product>`_ (ada Toshiba)
-
-Kategori ``hp``:
-
-- `Oppo Official Store <https://www.tokopedia.com/oppo/product>`_
-- `Samsung Official Store <https://www.tokopedia.com/samsung/etalase/mobiles>`_
-- `Infinix Official Store <https://www.tokopedia.com/officialinfinix/product>`_
-- `Xiaomi Official Store <https://www.tokopedia.com/xiaomi/etalase/mobile>`_
-- `realme Official Store <https://www.tokopedia.com/realme/product>`_
-- `vivo Indonesia <https://www.tokopedia.com/vivo/product>`_
-- `ASUS Mobile Indonesia <https://www.tokopedia.com/asus-mobile>`_
-- `HUAWEI Official Store <https://www.tokopedia.com/huawei/etalase/smartphone>`_
-- `Nokia Mobile Official <https://www.tokopedia.com/nokia-mobile/product>`_
-- `NerdBoss Gadget <https://www.tokopedia.com/nerdbossgadget/product>`_ (ada Iphone)

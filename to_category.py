@@ -29,20 +29,19 @@ def main(arg=sys.argv[1:]):
     help_output = f'default {output_file}'
 
     help_limit = 'Jumlah produk yang diproses, isi dengan 5 untuk uji coba'
-    help_filter = 'Hanya tautan tertentu saja'
+    help_filter = '''Sesuai kondisi, contoh: "url='https://...'"'''
 
     pars = ArgumentParser()
     pars.add_argument('conf')
     pars.add_argument('--input-file', default=input_file, help=help_input)
     pars.add_argument('--output-file', default=output_file, help=help_output)
     pars.add_argument('--limit', type=int, help=help_limit)
-    pars.add_argument('--filter-url', help=help_filter)
+    pars.add_argument('--filter', help=help_filter)
     option = pars.parse_args(sys.argv[1:])
 
     cf = read_conf(option.conf)
     parse(
-        cf, option.input_file, option.output_file, option.limit,
-        option.filter_url)
+        cf, option.input_file, option.output_file, option.limit, option.filter)
 
 
 if __name__ == '__main__':

@@ -15,7 +15,12 @@ pars.add_argument('conf')
 option = pars.parse_args(sys.argv[1:])
 
 cf = read_conf(option.conf)
-base_download_dir = cf.get('base_download_dir', '/tmp')
+if not (base_download_dir := cf.get('base_download_dir')):
+    home_dir = os.path.expanduser('~')
+    base_download_dir = os.path.join(home_dir, 'tmp')
+    if not os.path.exists(base_download_dir):
+        print('Create', base_download_dir)
+        os.mkdir(base_download_dir)
 
 download_dirs = []
 for url in cf['url'].strip().splitlines():
@@ -28,8 +33,9 @@ for url in cf['url'].strip().splitlines():
     download_dirs.append((web_name, download_dir))
     print('  Download Directory:', download_dir)
     if not os.path.exists(download_dir):
+        print('  Create', download_dir)
         os.mkdir(download_dir)
-    a = Browser(url, download_dir)
+    a = Browser(url, download_dir, cf['is_ready_stock'])
     a.run()
 
 csv_sources = []
@@ -40,6 +46,8 @@ for web_name, download_dir in download_dirs:
     csv_sources.append(output_file)
 
 for csv_source in csv_sources:
+    if not os.path.exists(csv_source):
+        continue
     name, ext = os.path.splitext(csv_source)
     output_file = [cf['category']] + name.split('-')[1:]
     output_file = '-'.join(output_file) + ext
