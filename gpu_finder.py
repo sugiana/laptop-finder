@@ -68,7 +68,7 @@ SORT_BY = dict(price='Price', memory_gb='Memory', pcie_version='PCIe')
 SORT_BY_KEYS = list(SORT_BY.keys())
 ASC = dict(price=True, memory_gb=False, pcie_version=False)
 
-DEFAULT = dict(price=5000000, memory=8, pcie=4)
+DEFAULT = dict(price=5000000, memory=8, pcie=4, processor='NVIDIA')
 
 MAIN = sys.modules[__name__]
 
@@ -96,11 +96,14 @@ def read_csv():
 orig_df = read_csv()
 orig_df = orig_df[orig_df.category == 'gpu']
 
-brand_list = [x for x in orig_df.brand.drop_duplicates()]
+df = orig_df[orig_df.brand.notnull()]
+brand_list = [x for x in df.brand.drop_duplicates()]
 brand_list.sort()
 
-processor_brand_list = [x for x in orig_df.processor_brand.drop_duplicates()]
-processor_brand_list.sort()
+df = orig_df[orig_df.processor_brand.notnull()]
+processor_list = [x for x in df.processor_brand.drop_duplicates()]
+processor_list.sort()
+processor_index = default_index('processor')
 
 df = orig_df[orig_df.memory_gb.notnull()]
 df = df[df.memory_gb > 0]
@@ -162,7 +165,8 @@ if st.checkbox('Brand'):
     brand_choice = st.selectbox('Brand', brand_list)
     df = df[df.brand == brand_choice]
 if st.checkbox('Processor brand'):
-    processor_brand_choice = st.selectbox('Brand', processor_brand_list)
+    processor_brand_choice = st.selectbox(
+        'Brand', processor_list, index=processor_index)
     df = df[df.processor_brand == processor_brand_choice]
 if st.checkbox('Processor type'):
     proc_type = st.text_input('Any text')

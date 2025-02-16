@@ -54,6 +54,8 @@ def clean_str(data: dict):
 
 def clean_numeric(data: dict, cf: dict):
     for column in cf.get('numeric_columns', []):
+        if data[column] is None:
+            continue
         try:
             float(data[column])
         except ValueError:

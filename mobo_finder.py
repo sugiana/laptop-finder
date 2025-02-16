@@ -58,7 +58,7 @@ SORT_BY = dict(
 SORT_BY_KEYS = list(SORT_BY.keys())
 ASC = dict(price=True, pcie_x16_count=False)
 
-DEFAULT = dict(price=5000000, pcie_x16=4)
+DEFAULT = dict(price=5000000, pcie_x16_count=4, pcie_x16_version=4)
 
 MAIN = sys.modules[__name__]
 
@@ -91,8 +91,13 @@ brand_list.sort()
 
 df = orig_df[orig_df.pcie_x16_count.notnull()]
 df = df[df.pcie_x16_count > 0]
-pcie_x16_list = [int(x) for x in df.pcie_x16_count.drop_duplicates()]
-pcie_x16_index = default_index('pcie_x16')
+pcie_x16_count_list = [int(x) for x in df.pcie_x16_count.drop_duplicates()]
+pcie_x16_count_index = default_index('pcie_x16_count')
+
+df = orig_df[orig_df.pcie_x16_version.notnull()]
+df = df[df.pcie_x16_version > 0]
+pcie_x16_version_list = [int(x) for x in df.pcie_x16_version.drop_duplicates()]
+pcie_x16_version_index = default_index('pcie_x16_version')
 
 price_step = 500000
 price_min = int(orig_df.price.min() / price_step + 1) * price_step
@@ -141,10 +146,14 @@ st.title('Motherboard Finder')
 if st.checkbox('Brand'):
     brand_choice = st.selectbox('Brand', brand_list)
     df = df[df.brand == brand_choice]
-if st.checkbox('Minimum PCIe x16'):
-    pcie_x16_choice = st.selectbox(
-        'Count', pcie_x16_list, index=pcie_x16_index)
-    df = df[df.pcie_x16_count >= pcie_x16_choice]
+if st.checkbox('PCIe x16 count'):
+    pcie_x16_count_choice = st.selectbox(
+        'Amount', pcie_x16_count_list, index=pcie_x16_count_index)
+    df = df[df.pcie_x16_count >= pcie_x16_count_choice]
+if st.checkbox('PCIe x16 version'):
+    pcie_x16_version_choice = st.selectbox(
+        'Number', pcie_x16_version_list, index=pcie_x16_version_index)
+    df = df[df.pcie_x16_version >= pcie_x16_version_choice]
 if st.checkbox('Maximum price'):
     price_choice = st.slider(
             'Rp', price_min, price_max, DEFAULT['price'], price_step)
