@@ -49,7 +49,7 @@ if not csv_file:
             break
 
 COLUMNS = [
-    'brand', 'title', 'price', 'is_new', 'time', 'stock', 'description',
+    'brand_name', 'title', 'price', 'is_new', 'time', 'stock', 'description',
     'pcie_x16', 'pcie_x16_count', 'pcie_x16_version']
 
 SORT_BY = dict(
@@ -86,7 +86,7 @@ def read_csv():
 orig_df = read_csv()
 orig_df = orig_df[orig_df.category == 'mobo']
 
-brand_list = [x for x in orig_df.brand.drop_duplicates()]
+brand_list = [x for x in orig_df.brand_name.drop_duplicates()]
 brand_list.sort()
 
 df = orig_df[orig_df.pcie_x16_count.notnull()]
@@ -109,8 +109,8 @@ df.insert(3, 'price_rp', orig_df.apply(price_value, axis='columns'))
 df = df.sort_values(by=['price'])
 
 # Kolom
-# 1 nomor, 2 brand, 3 title, 4 price, 5 price_rp, 6 is_new, 7 time, 8 stock,
-# 9 description, 10 pcie_x16, 11 pcie_x16_count, 12 pcie_x16_version
+# 1 nomor, 2 brand_name, 3 title, 4 price, 5 price_rp, 6 is_new, 7 time,
+# 8 stock, 9 description, 10 pcie_x16, 11 pcie_x16_count, 12 pcie_x16_version
 
 # Sembunyikan nomor, dan lainnya yang tidak nyaman
 hide_columns = [2, 4, 6, 7, 8, 9, 11, 12]
@@ -144,20 +144,20 @@ st.markdown(css, unsafe_allow_html=True)
 
 st.title('Motherboard Finder')
 if st.checkbox('Brand'):
-    brand_choice = st.selectbox('Brand', brand_list)
-    df = df[df.brand == brand_choice]
+    choice = st.selectbox('Brand', brand_list)
+    df = df[df.brand == choice]
 if st.checkbox('PCIe x16 count'):
-    pcie_x16_count_choice = st.selectbox(
+    choice = st.selectbox(
         'Amount', pcie_x16_count_list, index=pcie_x16_count_index)
-    df = df[df.pcie_x16_count >= pcie_x16_count_choice]
+    df = df[df.pcie_x16_count >= choice]
 if st.checkbox('PCIe x16 version'):
-    pcie_x16_version_choice = st.selectbox(
+    choice = st.selectbox(
         'Number', pcie_x16_version_list, index=pcie_x16_version_index)
-    df = df[df.pcie_x16_version >= pcie_x16_version_choice]
+    df = df[df.pcie_x16_version >= choice]
 if st.checkbox('Maximum price'):
-    price_choice = st.slider(
-            'Rp', price_min, price_max, DEFAULT['price'], price_step)
-    df = df[df.price <= price_choice]
+    choice = st.slider(
+        'Rp', price_min, price_max, DEFAULT['price'], price_step)
+    df = df[df.price <= choice]
 if st.checkbox('New'):
     df = df[df.is_new == 1]
 if st.checkbox('Stock'):

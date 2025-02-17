@@ -21,27 +21,31 @@ def create_numeric_columns(cf: dict):
                 cf['numeric_columns'].append(column)
 
 
-def get_brands(d: dict) -> (list, dict):
-    brands = list(d.keys())
+def get_names(d: dict) -> (list, dict):
+    names = list(d.keys())
     alias = dict()
     for key in d:
         alias[key] = key
         values = d[key].strip().split()
         for value in values:
             alias[value] = key
-    return brands, alias
+    return names, alias
 
 
-def create_brands(conf: RawConfigParser, cf: dict):
+def create_names(conf: RawConfigParser, cf: dict):
     r = dict()
+    for column in cf['columns']:
+        if column[-5:] != '_name':
+            continue
+        r[column] = ([], dict())
     for section in conf.sections():
-        if section[-5:] != 'brand':
+        if section[-5:] != '_name':
             continue
         column = section
-        keys, alias = get_brands(dict(conf.items(column)))
+        keys, alias = get_names(dict(conf.items(column)))
         r[column] = (keys, alias)
     if r:
-        cf['brands'] = r
+        cf['names'] = r
 
 
 def read_conf(conf_file):
@@ -70,7 +74,7 @@ def read_conf(conf_file):
     # Untuk repair.py
     to_list('not_null_columns')
     to_list('numeric_units') and create_numeric_columns(cf)
-    create_brands(conf, cf)
+    create_names(conf, cf)
     # Untuk check.py
     to_list('count_columns')
     to_list('min_max_columns')

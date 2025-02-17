@@ -5,3 +5,4 @@ pandas
 requests
 ollama
 streamlit
+jaccard-index

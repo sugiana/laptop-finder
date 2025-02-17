@@ -49,10 +49,10 @@ if not csv_file:
             break
 
 COLUMNS = [
-    'brand', 'title', 'price', 'processor', 'graphic', 'memory', 'memory_gb',
-    'storage', 'storage_gb', 'monitor', 'monitor_inch', 'weight', 'weight_kg',
-    'is_new', 'processor_brand', 'graphic_brand', 'graphic_gb', 'stock',
-    'description', 'time']
+    'brand_name', 'title', 'price', 'processor', 'graphic', 'memory',
+    'memory_gb', 'storage', 'storage_gb', 'monitor', 'monitor_inch', 'weight',
+    'weight_kg', 'is_new', 'processor_name', 'graphic_name', 'graphic_gb',
+    'stock', 'description', 'time']
 
 SORT_BY = dict(
     price='Price',
@@ -67,7 +67,7 @@ ASC = dict(
 
 DEFAULT = dict(
         price=15000000, memory=8, vram=12, storage=256, monitor=14, weight=1.6,
-        graphic_brand='NVIDIA')
+        graphic='NVIDIA')
 
 MAIN = sys.modules[__name__]
 
@@ -95,16 +95,16 @@ def read_csv():
 orig_df = read_csv()
 orig_df = orig_df[orig_df.category == 'laptop']
 
-df = orig_df[orig_df.processor_brand.notnull()]
-processor_brand_list = [x for x in df.processor_brand.drop_duplicates()]
-processor_brand_list.sort()
+df = orig_df[orig_df.processor_name.notnull()]
+processor_list = [x for x in df.processor_name.drop_duplicates()]
+processor_list.sort()
 
-df = orig_df[orig_df.graphic_brand.notnull()]
-graphic_brand_list = [x for x in df.graphic_brand.drop_duplicates()]
-graphic_brand_index = default_index('graphic_brand')
-graphic_brand_list.sort()
+df = orig_df[orig_df.graphic_name.notnull()]
+graphic_list = [x for x in df.graphic_name.drop_duplicates()]
+graphic_index = default_index('graphic')
+graphic_list.sort()
 
-brand_list = [x for x in orig_df.brand.drop_duplicates()]
+brand_list = [x for x in orig_df.brand_name.drop_duplicates()]
 brand_list.sort()
 
 df = orig_df[orig_df.memory_gb.notnull()]
@@ -138,10 +138,10 @@ df.insert(3, 'price_rp', orig_df.apply(price_value, axis='columns'))
 df = df.sort_values(by=['price'])
 
 # Kolom
-# 1 nomor, 2 brand, 3 title, 4 price, 5 price_rp, 6 processor, 7 graphic,
+# 1 nomor, 2 brand_name, 3 title, 4 price, 5 price_rp, 6 processor, 7 graphic,
 # 8 memory, 9 memory_gb, 10 storage, 11 storage_gb, 12 monitor,
-# 13 monitor_inch, 14 weight, 15 weight_kg, 16 is_new, 17 processor_brand,
-# 18 graphic_brand, 19 graphic_gb, 20 stock, 21 description, 22 time
+# 13 monitor_inch, 14 weight, 15 weight_kg, 16 is_new, 17 processor_name,
+# 18 graphic_name, 19 graphic_gb, 20 stock, 21 description, 22 time
 
 # Sembunyikan nomor, dan lainnya yang tidak nyaman
 hide_columns = [2, 4, 9, 11, 13, 15, 16, 17, 18, 19, 20, 21, 22]
@@ -175,38 +175,37 @@ st.markdown(css, unsafe_allow_html=True)
 
 st.title('Laptop Finder')
 if st.checkbox('Brand'):
-    brand_choice = st.selectbox('Brand', brand_list)
-    df = df[df.brand == brand_choice]
+    choice = st.selectbox('Brand', brand_list)
+    df = df[df.brand_name == choice]
 if st.checkbox('Processor'):
-    processor_choice = st.selectbox('Processor', processor_brand_list)
-    df = df[df.processor_brand == processor_choice]
+    choice = st.selectbox('Processor', processor_list)
+    df = df[df.processor_name == choice]
 if st.checkbox('Graphic'):
-    graphic_choice = st.selectbox(
-        'Graphic', graphic_brand_list, index=graphic_brand_index)
-    df = df[df.graphic_brand == graphic_choice]
+    choice = st.selectbox('Graphic', graphic_list, index=graphic_index)
+    df = df[df.graphic_name == choice]
 if st.checkbox('Minimum VRAM'):
-    vram_choice = st.selectbox('GB', vram_list, index=vram_index)
-    df = df[df.graphic_gb >= vram_choice]
+    choice = st.selectbox('GB', vram_list, index=vram_index)
+    df = df[df.graphic_gb >= choice]
 if st.checkbox('Minimum memory'):
-    memory_choice = st.selectbox('GB', memory_list, index=memory_index)
-    df = df[df.memory_gb >= memory_choice]
+    choice = st.selectbox('GB', memory_list, index=memory_index)
+    df = df[df.memory_gb >= choice]
 if st.checkbox('SSD'):
     df = df[df.storage.str.contains('ssd', na=False, case=False)]
 if st.checkbox('Minimum storage'):
-    storage_choice = st.selectbox('GB', storage_list, index=storage_index)
-    df = df[df.storage_gb >= storage_choice]
+    choice = st.selectbox('GB', storage_list, index=storage_index)
+    df = df[df.storage_gb >= choice]
 if st.checkbox('Maximum monitor'):
-    monitor_choice = st.selectbox('Inch', monitor_list, index=monitor_index)
-    df = df[df.monitor_inch <= monitor_choice]
+    choice = st.selectbox('Inch', monitor_list, index=monitor_index)
+    df = df[df.monitor_inch <= choice]
 if st.checkbox('Thunderbolt'):
     df = df[df.description.str.contains('thunderbolt', na=False, case=False)]
 if st.checkbox('Maximum weight'):
-    weight_choice = st.selectbox('Kg', weight_list, index=weight_index)
-    df = df[df.weight_kg <= weight_choice]
+    choice = st.selectbox('Kg', weight_list, index=weight_index)
+    df = df[df.weight_kg <= choice]
 if st.checkbox('Maximum price'):
-    price_choice = st.slider(
-            'Rp', price_min, price_max, DEFAULT['price'], price_step)
-    df = df[df.price <= price_choice]
+    choice = st.slider(
+        'Rp', price_min, price_max, DEFAULT['price'], price_step)
+    df = df[df.price <= choice]
 if st.checkbox('New'):
     df = df[df.is_new == 1]
 if st.checkbox('Stock'):

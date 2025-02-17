@@ -35,10 +35,16 @@ def price_value(cols):
     return s
 
 
-def memory_value(cols):
-    if pd.isnull(cols.memory_gb):
+def capacity_value(cols):
+    if pd.isnull(cols.capacity_gb):
         return ''
-    return f'{int(cols.memory_gb)} GB'
+    return f'{int(cols.capacity_gb)} GB'
+
+
+def warranty_value(cols):
+    if pd.isnull(cols.warranty_year) or not cols.warranty_year:
+        return ''
+    return f'{int(cols.warranty_year)} tahun'
 
 
 def pcie_value(cols):
@@ -54,21 +60,24 @@ for argv in sys.argv[1:]:
 
 if not csv_file:
     FILES = [
-            'gpu.csv',
-            'http://warga.web.id/files/dijual/gpu.csv.gz']
+            'storage.csv',
+            'http://warga.web.id/files/dijual/storage.csv.gz']
     for csv_file in FILES:
         if os.path.exists(csv_file):
             break
 
 COLUMNS = [
     'brand_name', 'title', 'price', 'is_new', 'time', 'stock', 'description',
-    'processor_name', 'processor_type', 'memory_gb', 'pcie_version']
+    'capacity_gb', 'warranty_year', 'pcie_version']
 
-SORT_BY = dict(price='Price', memory_gb='Memory', pcie_version='PCIe')
+SORT_BY = dict(
+        price='Price', capacity_gb='Capacity', warranty_year='Warranty',
+        pcie_version='PCIe')
 SORT_BY_KEYS = list(SORT_BY.keys())
-ASC = dict(price=True, memory_gb=False, pcie_version=False)
+ASC = dict(
+        price=True, capacity_gb=False, warranty_year=False, pcie_version=False)
 
-DEFAULT = dict(price=5000000, memory=8, pcie=4, processor='NVIDIA')
+DEFAULT = dict(price=5000000, capacity=1000, warranty=5, pcie=4)
 
 MAIN = sys.modules[__name__]
 
@@ -94,21 +103,21 @@ def read_csv():
 
 
 orig_df = read_csv()
-orig_df = orig_df[orig_df.category == 'gpu']
+orig_df = orig_df[orig_df.category == 'storage']
 
 df = orig_df[orig_df.brand_name.notnull()]
 brand_list = [x for x in df.brand_name.drop_duplicates()]
 brand_list.sort()
 
-df = orig_df[orig_df.processor_name.notnull()]
-processor_list = [x for x in df.processor_name.drop_duplicates()]
-processor_list.sort()
-processor_index = default_index('processor')
+df = orig_df[orig_df.capacity_gb.notnull()]
+df = df[df.capacity_gb > 0]
+capacity_list = [int(x) for x in df.capacity_gb.drop_duplicates()]
+capacity_index = default_index('capacity')
 
-df = orig_df[orig_df.memory_gb.notnull()]
-df = df[df.memory_gb > 0]
-memory_list = [int(x) for x in df.memory_gb.drop_duplicates()]
-memory_index = default_index('memory')
+df = orig_df[orig_df.warranty_year.notnull()]
+df = df[df.warranty_year > 0]
+warranty_list = [int(x) for x in df.warranty_year.drop_duplicates()]
+warranty_index = default_index('warranty')
 
 df = orig_df[orig_df.pcie_version.notnull()]
 pcie_list = [int(x) for x in df.pcie_version.drop_duplicates()]
@@ -121,17 +130,18 @@ price_max = int(orig_df.price.max() / price_step + 1) * price_step
 df = orig_df[COLUMNS].copy()
 df['title'] = orig_df.apply(clickable, axis='columns')
 df.insert(3, 'price_rp', orig_df.apply(price_value, axis='columns'))
-df.insert(11, 'memory', orig_df.apply(memory_value, axis='columns'))
+df.insert(9, 'capacity', orig_df.apply(capacity_value, axis='columns'))
+df.insert(11, 'warranty', orig_df.apply(warranty_value, axis='columns'))
 df.insert(13, 'pcie', orig_df.apply(pcie_value, axis='columns'))
 df = df.sort_values(by=['price'])
 
 # Kolom
 # 1 nomor, 2 brand_name, 3 title, 4 price, 5 price_rp, 6 is_new, 7 time,
-# 8 stock, 9 description, 10 processor_name, 11 processor_type, 12 memory_gb,
-# 13 memory, 14 pcie_version, 15 pcie
+# 8 stock, 9 description, 10 capacity_gb, 11 capacity, 12 warranty_year,
+# 13 warranty, 14 pcie_version, 15 pcie
 
 # Sembunyikan nomor, dan lainnya yang tidak nyaman
-hide_columns = [2, 4, 6, 7, 8, 9, 12, 14]
+hide_columns = [2, 4, 6, 7, 8, 9, 10, 12, 14]
 css = """
     <style>
     .block-container {max-width: 100rem}
@@ -160,22 +170,19 @@ for column in hide_columns:
 css += '\n</style>'
 st.markdown(css, unsafe_allow_html=True)
 
-st.title('GPU Finder')
+st.title('Storage Finder')
 if st.checkbox('Brand'):
     choice = st.selectbox('Brand', brand_list)
     df = df[df.brand_name == choice]
-if st.checkbox('Processor brand'):
-    choice = st.selectbox('Brand', processor_list, index=processor_index)
-    df = df[df.processor_name == choice]
-if st.checkbox('Processor type'):
-    text = st.text_input('Any text')
-    df = df[df.processor_type.str.contains(text, na=False, case=False)]
-if st.checkbox('Minimum memory'):
-    choice = st.selectbox('GB', memory_list, index=memory_index)
-    df = df[df.memory_gb >= choice]
+if st.checkbox('Minimum capacity'):
+    choice = st.selectbox('GB', capacity_list, index=capacity_index)
+    df = df[df.capacity_gb >= choice]
 if st.checkbox('PCIe'):
     choice = st.selectbox('Version', pcie_list, index=pcie_index)
     df = df[df.pcie_version >= choice]
+if st.checkbox('Minimum warranty'):
+    choice = st.selectbox('GB', warranty_list, index=warranty_index)
+    df = df[df.warranty_year >= choice]
 if st.checkbox('Maximum price'):
     choice = st.slider(
         'Rp', price_min, price_max, DEFAULT['price'], price_step)

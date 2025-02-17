@@ -48,11 +48,11 @@ if not csv_file:
             break
 
 COLUMNS = [
-    'brand', 'title', 'price', 'processor', 'graphic', 'memory', 'memory_gb',
-    'storage', 'storage_gb', 'monitor', 'monitor_inch', 'battery',
+    'brand_name', 'title', 'price', 'processor', 'graphic', 'memory',
+    'memory_gb', 'storage', 'storage_gb', 'monitor', 'monitor_inch', 'battery',
     'battery_mah', 'is_network_5g', 'is_nfc', 'usb', 'is_usb_c', 'is_compass',
-    'weight', 'weight_kg', 'is_new', 'stock', 'processor_brand',
-    'graphic_brand', 'camera', 'camera_mp', 'camera_aperture', 'is_camera_ois']
+    'weight', 'weight_kg', 'is_new', 'stock', 'processor_name',
+    'graphic_name', 'camera', 'camera_mp', 'camera_aperture', 'is_camera_ois']
 
 SORT_BY = dict(
     price='Price',
@@ -97,15 +97,15 @@ orig_df = read_csv()
 orig_df = orig_df[orig_df.category == 'hp']
 choice_df = orig_df[orig_df.stock > 0]
 
-brand_list = [x for x in choice_df.brand.drop_duplicates()]
+brand_list = [x for x in choice_df.brand_name.drop_duplicates()]
 brand_list.sort()
 
-df = choice_df[choice_df.processor_brand.notnull()]
-processor_list = [x for x in df.processor_brand.drop_duplicates()]
+df = choice_df[choice_df.processor_name.notnull()]
+processor_list = [x for x in df.processor_name.drop_duplicates()]
 processor_list.sort()
 
-df = choice_df[choice_df.graphic_brand.notnull()]
-graphic_list = [x for x in df.graphic_brand.drop_duplicates()]
+df = choice_df[choice_df.graphic_name.notnull()]
+graphic_list = [x for x in df.graphic_name.drop_duplicates()]
 graphic_list.sort()
 
 df = choice_df[choice_df.memory_gb.notnull()]
@@ -145,11 +145,11 @@ df.insert(3, 'price_rp', orig_df.apply(get_price, axis='columns'))
 df = df.sort_values(by=['price'])
 
 # Kolom
-# 1 nomor, 2 brand, 3 title, 4 price, 5 price_rp, 6 processor, 7 graphic,
+# 1 nomor, 2 brand_name, 3 title, 4 price, 5 price_rp, 6 processor, 7 graphic,
 # 8 memory, 9 memory_gb, 10 storage, 11 storage_gb, 12 monitor,
 # 13 monitor_inch, 14 battery, 15 battery_mah, 16 network_5g, 17 is_nfc,
 # 18 usb, 19 is_usb_c, 20 is_compass, 21 weight, 22 weight_kg, 23 is_new,
-# 24 stock, 25 processor_brand, 26 graphic_brand, 27 camera, 28 camera_mp,
+# 24 stock, 25 processor_name, 26 graphic_name, 27 camera, 28 camera_mp,
 # 29 camera_aperture, 30 is_camera_ois
 
 # Sembunyikan nomor, dan lainnya yang tidak nyaman
@@ -183,32 +183,32 @@ st.markdown(css, unsafe_allow_html=True)
 
 st.title('HP Finder')
 if st.checkbox('Brand'):
-    brand_choice = st.selectbox('Brand', brand_list)
-    df = df[df.brand == brand_choice]
+    choice = st.selectbox('Brand', brand_list)
+    df = df[df.brand_name == choice]
 if st.checkbox('Processor'):
-    processor_choice = st.selectbox('Processor', processor_list)
-    df = df[df.processor_brand == processor_choice]
+    choice = st.selectbox('Processor', processor_list)
+    df = df[df.processor_name == choice]
 if st.checkbox('Graphic'):
-    graphic_choice = st.selectbox('Graphic', graphic_list)
-    df = df[df.graphic_brand == graphic_choice]
+    choice = st.selectbox('Graphic', graphic_list)
+    df = df[df.graphic_name == choice]
 if st.checkbox('Minimum memory'):
-    memory_choice = st.selectbox('GB', memory_list, index=memory_index)
-    df = df[df.memory_gb >= memory_choice]
+    choice = st.selectbox('GB', memory_list, index=memory_index)
+    df = df[df.memory_gb >= choice]
 if st.checkbox('Minimum storage'):
-    storage_choice = st.selectbox('GB', storage_list, index=storage_index)
-    df = df[df.storage_gb >= storage_choice]
+    choice = st.selectbox('GB', storage_list, index=storage_index)
+    df = df[df.storage_gb >= choice]
 if st.checkbox('Camera pixel'):
-    camera_mp_choice = st.selectbox(
+    choice = st.selectbox(
         'Megapixel', camera_mp_list, index=camera_mp_index)
-    df = df[df.camera_mp <= camera_mp_choice]
+    df = df[df.camera_mp <= choice]
 if st.checkbox('Camera aperture'):
-    camera_aperture_choice = st.selectbox('f/n', camera_aperture_list)
-    df = df[df.camera_aperture <= camera_aperture_choice]
+    choice = st.selectbox('f/n', camera_aperture_list)
+    df = df[df.camera_aperture <= choice]
 if st.checkbox('Optical Image Stabilization'):
     df = df[df.is_camera_ois.notnull()]
 if st.checkbox('Maximum monitor'):
-    monitor_choice = st.selectbox('Inch', monitor_list, index=monitor_index)
-    df = df[df.monitor_inch <= monitor_choice]
+    choice = st.selectbox('Inch', monitor_list, index=monitor_index)
+    df = df[df.monitor_inch <= choice]
 if st.checkbox('5G'):
     df = df[df.is_network_5g.notnull()]
 if st.checkbox('NFC'):
@@ -218,12 +218,12 @@ if st.checkbox('USB Type-C'):
 if st.checkbox('Compass'):
     df = df[df.is_compass.notnull()]
 if st.checkbox('Maximum weight'):
-    weight_choice = st.selectbox('Kg', weight_list, index=weight_index)
-    df = df[df.weight_kg <= weight_choice]
+    choice = st.selectbox('Kg', weight_list, index=weight_index)
+    df = df[df.weight_kg <= choice]
 if st.checkbox('Maximum price'):
-    price_choice = st.slider(
+    choice = st.slider(
             'Rp', price_min, price_max, DEFAULT['price'], price_step)
-    df = df[df.price <= price_choice]
+    df = df[df.price <= choice]
 if st.checkbox('New'):
     df = df[df.is_new == 1]
 if st.checkbox('Stock'):
