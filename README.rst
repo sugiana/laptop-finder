@@ -214,6 +214,7 @@ Hasilnya bisa dilihat di:
 3. `Motherboard Finder <https://s.id/mobo-dijual>`_
 4. `GPU Finder <https://gpu-finder.streamlit.app>`_
 5. `Storage Finder <https://storage-finder.streamlit.app>`_
+6. `PSU Finder <https://psu-finder.streamlit.app>`_
 
 
 Perbaikan

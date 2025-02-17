@@ -181,7 +181,7 @@ if st.checkbox('PCIe'):
     choice = st.selectbox('Version', pcie_list, index=pcie_index)
     df = df[df.pcie_version >= choice]
 if st.checkbox('Minimum warranty'):
-    choice = st.selectbox('GB', warranty_list, index=warranty_index)
+    choice = st.selectbox('Year', warranty_list, index=warranty_index)
     df = df[df.warranty_year >= choice]
 if st.checkbox('Maximum price'):
     choice = st.slider(
