@@ -5,12 +5,58 @@ import pandas as pd
 import streamlit as st
 
 
-def clickable(cols):
+def get_list(column: str, cast_func=None):
+    c = getattr(orig_df, column)
+    tmp_df = orig_df[c.notnull()]
+    c = getattr(tmp_df, column)
+    if cast_func:
+        list_ = [cast_func(x) for x in c.drop_duplicates()]
+    else:
+        list_ = [x for x in c.drop_duplicates()]
+    list_.sort()
+    if column in DEFAULT:
+        index = -1
+        for val in list_:
+            index += 1
+            if val >= DEFAULT[column]:
+                break
+    else:
+        index = 0
+    return list_, index
+
+
+def filter_name(column, label):
+    list_, index = get_list(column)
+    choice = st.selectbox(label, list_, index=index)
+    c = getattr(df, column)
+    return df[c == choice]
+
+
+def filter_boolean(column):
+    c = getattr(df, column)
+    return df[c.notnull()]
+
+
+def filter_min(column: str, label: str, cast_func=None) -> pd.DataFrame:
+    list_, index = get_list(column, cast_func)
+    choice = st.selectbox(label, list_, index=index)
+    c = getattr(df, column)
+    return df[c >= choice]
+
+
+def filter_max(column: str, label: str) -> pd.DataFrame:
+    list_, index = get_list(column)
+    choice = st.selectbox(label, list_, index=index)
+    c = getattr(df, column)
+    return df[c <= choice]
+
+
+def get_title(cols):
     return f'<a href="{cols.url}">{cols.title}</a>'\
            f'<br/><em>{cols.time}</em>'
 
 
-def is_new_value(is_new: int, stock: int):
+def get_is_new(is_new: int, stock: int):
     if not stock:
         return 'HABIS'
     if is_new == 1:
@@ -18,11 +64,11 @@ def is_new_value(is_new: int, stock: int):
     return 'BEKAS'
 
 
-def price_value(cols):
+def get_price(cols):
     s = '{:0,}'.format(int(cols.price))
     s = s.replace(',', '.')
     s = f'Rp {s}'
-    label = is_new_value(cols.is_new, cols.stock)
+    label = get_is_new(cols.is_new, cols.stock)
     if label:
         cls = ['c-label']
         if cols.stock:
@@ -35,17 +81,45 @@ def price_value(cols):
     return s
 
 
-def memory_value(cols):
-    if pd.isnull(cols.memory_gb):
+def concat_columns(cols, names: list):
+    rows = []
+    for column in names:
+        try:
+            v = getattr(cols, column)
+            v = v.strip()
+            if v:
+                rows.append(v)
+        except AttributeError:
+            pass
+    return '<br/>'.join(rows)
+
+
+def get_processor(cols):
+    return concat_columns(cols, ('processor_name', 'processor_type'))
+
+
+def get_memory(cols):
+    if pd.isnull(cols.memory_gb) or not cols.memory_gb:
         return ''
     return f'{int(cols.memory_gb)} GB'
 
 
-def pcie_value(cols):
-    if pd.isnull(cols.pcie_version):
+def get_pcie(cols):
+    if pd.isnull(cols.pcie_version) or not cols.pcie_version:
         return ''
     return f'PCIe {int(cols.pcie_version)}'
 
+
+def sort_by_label(key):
+    return SORT_BY[key]
+
+
+COLUMNS = ['title', 'price', 'processor_name', 'memory_gb', 'pcie_version']
+SORT_BY = dict(price='Price', memory_gb='Memory', pcie_version='PCIe')
+SORT_BY_KEYS = list(SORT_BY.keys())
+ASC = dict(price=True, memory_gb=False, pcie_version=False)
+DEFAULT = dict(
+        price=5000000, memory_gb=8, pcie_version=4, processor_name='NVIDIA')
 
 csv_file = None
 for argv in sys.argv[1:]:
@@ -60,33 +134,6 @@ if not csv_file:
         if os.path.exists(csv_file):
             break
 
-COLUMNS = [
-    'brand_name', 'title', 'price', 'is_new', 'time', 'stock', 'description',
-    'processor_name', 'processor_type', 'memory_gb', 'pcie_version']
-
-SORT_BY = dict(price='Price', memory_gb='Memory', pcie_version='PCIe')
-SORT_BY_KEYS = list(SORT_BY.keys())
-ASC = dict(price=True, memory_gb=False, pcie_version=False)
-
-DEFAULT = dict(price=5000000, memory=8, pcie=4, processor='NVIDIA')
-
-MAIN = sys.modules[__name__]
-
-
-def default_index(name):
-    index = 0
-    vals = getattr(MAIN, f'{name}_list')
-    vals.sort()
-    for val in vals:
-        if val >= DEFAULT[name]:
-            break
-        index += 1
-    return index
-
-
-def sort_by_label(key):
-    return SORT_BY[key]
-
 
 @st.cache_data(ttl=60*60*24)
 def read_csv():
@@ -95,44 +142,57 @@ def read_csv():
 
 orig_df = read_csv()
 orig_df = orig_df[orig_df.category == 'gpu']
+df = orig_df.copy()
 
-df = orig_df[orig_df.brand_name.notnull()]
-brand_list = [x for x in df.brand_name.drop_duplicates()]
-brand_list.sort()
+st.title('GPU Finder')
+if st.checkbox('Brand'):
+    df = filter_name('brand_name', 'Brand')
 
-df = orig_df[orig_df.processor_name.notnull()]
-processor_list = [x for x in df.processor_name.drop_duplicates()]
-processor_list.sort()
-processor_index = default_index('processor')
+if st.checkbox('Processor brand'):
+    df = filter_name('processor_name', 'Brand')
 
-df = orig_df[orig_df.memory_gb.notnull()]
-df = df[df.memory_gb > 0]
-memory_list = [int(x) for x in df.memory_gb.drop_duplicates()]
-memory_index = default_index('memory')
+if st.checkbox('Processor type'):
+    text = st.text_input('Any text')
+    df = df[df.processor_type.str.contains(text, na=False, case=False)]
 
-df = orig_df[orig_df.pcie_version.notnull()]
-pcie_list = [int(x) for x in df.pcie_version.drop_duplicates()]
-pcie_index = default_index('pcie')
+if st.checkbox('Minimum memory'):
+    df = filter_min('memory_gb', 'GB', int)
 
-price_step = 500000
-price_min = int(orig_df.price.min() / price_step + 1) * price_step
-price_max = int(orig_df.price.max() / price_step + 1) * price_step
+if st.checkbox('PCIe'):
+    df = filter_min('pcie_version', 'Version', int)
 
-df = orig_df[COLUMNS].copy()
-df['title'] = orig_df.apply(clickable, axis='columns')
-df.insert(3, 'price_rp', orig_df.apply(price_value, axis='columns'))
-df.insert(11, 'memory', orig_df.apply(memory_value, axis='columns'))
-df.insert(13, 'pcie', orig_df.apply(pcie_value, axis='columns'))
-df = df.sort_values(by=['price'])
+if st.checkbox('Maximum price'):
+    step = 500000
+    tmp_df = orig_df[orig_df.stock > 0]
+    min_ = int(tmp_df.price.min() / step + 1) * step
+    max_ = int(tmp_df.price.max() / step + 1) * step
+    choice = st.slider('Rp', min_, max_, DEFAULT['price'], step)
+    df = df[df.price <= choice]
 
-# Kolom
-# 1 nomor, 2 brand_name, 3 title, 4 price, 5 price_rp, 6 is_new, 7 time,
-# 8 stock, 9 description, 10 processor_name, 11 processor_type, 12 memory_gb,
-# 13 memory, 14 pcie_version, 15 pcie
+if st.checkbox('New'):
+    df = df[df.is_new == 1]
 
-# Sembunyikan nomor, dan lainnya yang tidak nyaman
-hide_columns = [2, 4, 6, 7, 8, 9, 12, 14]
-css = """
+if st.checkbox('Stock'):
+    df = df[df.stock > 1]
+
+choice = st.selectbox(
+        'Sort by', options=SORT_BY_KEYS, format_func=sort_by_label)
+if choice != 'price':
+    c = getattr(df, choice)
+    df = df[c.notnull()]
+df = df.sort_values(by=[choice], ascending=[ASC[choice]])
+
+count = len(df)
+if count:
+    df = df.replace(np.nan, '', regex=True)
+    tmp_df = df[COLUMNS].copy()
+    tmp_df['title'] = df.apply(get_title, axis='columns')
+    tmp_df['price'] = df.apply(get_price, axis='columns')
+    tmp_df['processor_name'] = df.apply(get_processor, axis='columns')
+    tmp_df['memory_gb'] = df.apply(get_memory, axis='columns')
+    tmp_df['pcie_version'] = df.apply(get_pcie, axis='columns')
+    st.write(f'Found {count} rows')
+    css = '''
     <style>
     .block-container {max-width: 100rem}
     th {display: none}
@@ -154,40 +214,8 @@ css = """
     .c-label--green {
         background-color: #3cff33;
     }
-    """
-for column in hide_columns:
-    css += f'\n    tr>:nth-child({column})' + '{display: none}'
-css += '\n</style>'
-st.markdown(css, unsafe_allow_html=True)
-
-st.title('GPU Finder')
-if st.checkbox('Brand'):
-    choice = st.selectbox('Brand', brand_list)
-    df = df[df.brand_name == choice]
-if st.checkbox('Processor brand'):
-    choice = st.selectbox('Brand', processor_list, index=processor_index)
-    df = df[df.processor_name == choice]
-if st.checkbox('Processor type'):
-    text = st.text_input('Any text')
-    df = df[df.processor_type.str.contains(text, na=False, case=False)]
-if st.checkbox('Minimum memory'):
-    choice = st.selectbox('GB', memory_list, index=memory_index)
-    df = df[df.memory_gb >= choice]
-if st.checkbox('PCIe'):
-    choice = st.selectbox('Version', pcie_list, index=pcie_index)
-    df = df[df.pcie_version >= choice]
-if st.checkbox('Maximum price'):
-    choice = st.slider(
-        'Rp', price_min, price_max, DEFAULT['price'], price_step)
-    df = df[df.price <= choice]
-if st.checkbox('New'):
-    df = df[df.is_new == 1]
-if st.checkbox('Stock'):
-    df = df[df.stock > 0]
-sort_by = st.selectbox(
-            'Sort by', options=SORT_BY_KEYS, format_func=sort_by_label)
-df = df.sort_values(by=[sort_by], ascending=[ASC[sort_by]])
-df = df.replace(np.nan, '', regex=True)
-st.write(f'Found {len(df)} rows')
-st.write(
-    df.to_html(escape=False), unsafe_allow_html=True)
+    </style>'''
+    st.markdown(css, unsafe_allow_html=True)
+    st.write(tmp_df.to_html(escape=False), unsafe_allow_html=True)
+else:
+    st.write('No result')

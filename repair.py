@@ -32,7 +32,8 @@ def clean_category(data: dict, cf: dict):
         return
     for column in cf.get('not_null_columns', []):
         value = data[column]
-        if pd.isnull(value) or value.lower().find('tidak') > -1:
+        if pd.isnull(value) or isinstance(value, str) and \
+                value.lower().find('tidak') > -1:
             data['category'] = 'lainnya'
 
 
@@ -66,16 +67,22 @@ def clean_name(data: dict, column: str, nice_names: list, back_ref=dict()):
         names[column].append(data[column])
 
 
+OTHERS = ('tidak', 'unknown', 'none', 'lainnya', '-')
+
+
 def clean_names(data: dict, cf: dict):
     for column, items in cf.get('names', {}).items():
         keys, alias = items
         value = data[column]
         if value and not pd.isnull(value):
-            if value.lower().find('tidak') > -1:
-                s = 'lainnya'
-            else:
-                s = value.strip().replace('.', '')
-            data[column] = s
+            is_unknown = False
+            for other in OTHERS:
+                if value.lower().find(other) > -1:
+                    data[column] = None
+                    is_unknown = True
+                    break
+            if not is_unknown:
+                data[column] = value.strip().replace('.', '')
         clean_name(data, column, keys, alias)
 
 
@@ -88,19 +95,43 @@ def clean_str(data: dict):
 
 
 def clean_numeric(data: dict, cf: dict):
+    def clean_orig_column():
+        orig_column = '_'.join(column.split('_')[:-1])
+        if orig_column in data:
+            data[orig_column] = None
+
     for column in cf.get('numeric_columns', []):
+        if pd.isnull(data[column]) or not data[column]:
+            clean_orig_column()
+        else:
+            try:
+                float(data[column])
+            except ValueError:
+                data[column] = None
+                clean_orig_column()
+
+
+def clean_range_value(data: dict, cf: dict):
+    for column in cf.get('range_values', []):
         if data[column] is None:
             continue
-        try:
-            float(data[column])
-        except ValueError:
-            data[column] = None
+        min_, max_ = cf['range_values'][column]
+        if min_ <= data[column] <= max_:
+            continue
+        data[column] = None
 
 
 NEGATIVE_BOOLEAN = ['tidak', 'no']
 
 
 def clean_boolean(data: dict):
+    def update_if_false():
+        for word in value.lower().split():
+            for ref in NEGATIVE_BOOLEAN:
+                if word.find(ref) > -1:
+                    data[column] = None
+                    return
+
     for column, value in data.items():
         if column.find('is_') != 0:
             continue
@@ -108,10 +139,11 @@ def clean_boolean(data: dict):
             continue
         if not isinstance(value, str):
             continue
-        for word in value.lower().split():
-            for ref in NEGATIVE_BOOLEAN:
-                if word.find(ref) > -1:
-                    data[column] = None
+        value = value.strip()
+        if not value:
+            data[column] = None
+            continue
+        update_if_false()
 
 
 def repair(cf, csv_file):
@@ -125,6 +157,7 @@ def repair(cf, csv_file):
         clean_category(data, cf)
         clean_names(data, cf)
         clean_numeric(data, cf)
+        clean_range_value(data, cf)
         clean_boolean(data)
         for column in df.columns:
             value = data[column]

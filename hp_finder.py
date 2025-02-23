@@ -5,6 +5,52 @@ import pandas as pd
 import streamlit as st
 
 
+def get_list(column: str, cast_func=None):
+    c = getattr(orig_df, column)
+    tmp_df = orig_df[c.notnull()]
+    c = getattr(tmp_df, column)
+    if cast_func:
+        list_ = [cast_func(x) for x in c.drop_duplicates()]
+    else:
+        list_ = [x for x in c.drop_duplicates()]
+    list_.sort()
+    if column in DEFAULT:
+        index = -1
+        for val in list_:
+            index += 1
+            if val >= DEFAULT[column]:
+                break
+    else:
+        index = 0
+    return list_, index
+
+
+def filter_name(column, label):
+    list_, index = get_list(column)
+    choice = st.selectbox(label, list_, index=index)
+    c = getattr(df, column)
+    return df[c == choice]
+
+
+def filter_boolean(column):
+    c = getattr(df, column)
+    return df[c.notnull()]
+
+
+def filter_min(column: str, label: str, cast_func=None) -> pd.DataFrame:
+    list_, index = get_list(column, cast_func)
+    choice = st.selectbox(label, list_, index=index)
+    c = getattr(df, column)
+    return df[c >= choice]
+
+
+def filter_max(column: str, label: str) -> pd.DataFrame:
+    list_, index = get_list(column)
+    choice = st.selectbox(label, list_, index=index)
+    c = getattr(df, column)
+    return df[c <= choice]
+
+
 def get_title(cols):
     return f'<a href="{cols.url}">{cols.title}</a>'\
            f'<br/><em>{cols.time}</em>'
@@ -35,6 +81,73 @@ def get_price(cols):
     return s
 
 
+def intersect_columns(cols, names: list):
+    c1 = getattr(cols, names[0])
+    if not c1:
+        return ''
+    rows = [c1]
+    for name in names[1:]:
+        c = getattr(cols, name)
+        if not c:
+            continue
+        if c1.find(c) < 0:
+            rows.append(c)
+    return '<br/>'.join(rows)
+
+
+def get_memory(cols):
+    return intersect_columns(cols, ('memory', 'storage'))
+
+
+def get_camera(cols):
+    return intersect_columns(cols, ('camera', 'is_camera_ois'))
+
+
+def concat_columns(cols, names: list):
+    rows = []
+    for column in names:
+        try:
+            v = getattr(cols, column)
+            v = v.strip()
+            if v:
+                rows.append(v)
+        except AttributeError:
+            pass
+    return '<br/>'.join(rows)
+
+
+def get_processor(cols):
+    return concat_columns(cols, ('processor', 'graphic'))
+
+
+def get_monitor(cols):
+    return concat_columns(cols, ('monitor', 'weight', 'battery'))
+
+
+def get_usb(cols):
+    return concat_columns(
+        cols, ('is_network_5g', 'is_nfc', 'is_usb_c', 'is_compass'))
+
+
+def sort_by_label(key):
+    return SORT_BY[key]
+
+
+COLUMNS = [
+        'title', 'price', 'processor', 'memory', 'camera', 'monitor',
+        'is_usb_c']
+SORT_BY = dict(
+    price='Price', memory_gb='Memory', storage_gb='Storage',
+    monitor_inch='Monitor', camera_mp='Camera pixel',
+    camera_aperture='Camera aperture', weight_kg='Weight')
+SORT_BY_KEYS = list(SORT_BY.keys())
+ASC = dict(
+        price=True, memory_gb=False, storage_gb=False, monitor_inch=True,
+        weight_kg=True, camera_mp=False, camera_aperture=True)
+DEFAULT = dict(
+            price=2500000, memory_gb=4, storage_gb=128, monitor_inch=6,
+            weight_kg=0.15, camera_mp=50, camera_aperture=1.8)
+
 csv_file = None
 for argv in sys.argv[1:]:
     if argv[-4:] == '.csv':
@@ -47,46 +160,6 @@ if not csv_file:
         if os.path.exists(csv_file):
             break
 
-COLUMNS = [
-    'brand_name', 'title', 'price', 'processor', 'graphic', 'memory',
-    'memory_gb', 'storage', 'storage_gb', 'monitor', 'monitor_inch', 'battery',
-    'battery_mah', 'is_network_5g', 'is_nfc', 'usb', 'is_usb_c', 'is_compass',
-    'weight', 'weight_kg', 'is_new', 'stock', 'processor_name',
-    'graphic_name', 'camera', 'camera_mp', 'camera_aperture', 'is_camera_ois']
-
-SORT_BY = dict(
-    price='Price',
-    memory_gb='Memory',
-    storage_gb='Storage',
-    monitor='Monitor',
-    camera_mp='Camera pixel',
-    camera_aperture='Camera aperture',
-    weight_kg='Weight')
-SORT_BY_KEYS = list(SORT_BY.keys())
-ASC = dict(
-        price=True, memory_gb=False, storage_gb=False, monitor=True,
-        weight_kg=True, camera_mp=False, camera_aperture=True)
-
-DEFAULT = dict(price=2500000, memory=4, storage=128, monitor=6, weight=0.15,
-               camera_mp=50, camera_aperture=1.8)
-
-MAIN = sys.modules[__name__]
-
-
-def default_index(name):
-    index = 0
-    vals = getattr(MAIN, f'{name}_list')
-    vals.sort()
-    for val in vals:
-        if val >= DEFAULT[name]:
-            break
-        index += 1
-    return index
-
-
-def sort_by_label(key):
-    return SORT_BY[key]
-
 
 @st.cache_data(ttl=60*60*24)
 def read_csv():
@@ -95,66 +168,85 @@ def read_csv():
 
 orig_df = read_csv()
 orig_df = orig_df[orig_df.category == 'hp']
-choice_df = orig_df[orig_df.stock > 0]
+df = orig_df.copy()
 
-brand_list = [x for x in choice_df.brand_name.drop_duplicates()]
-brand_list.sort()
+st.title('HP Finder')
+if st.checkbox('Brand'):
+    df = filter_name('brand_name', 'Brand')
 
-df = choice_df[choice_df.processor_name.notnull()]
-processor_list = [x for x in df.processor_name.drop_duplicates()]
-processor_list.sort()
+if st.checkbox('Processor'):
+    df = filter_name('processor_name', 'Processor')
 
-df = choice_df[choice_df.graphic_name.notnull()]
-graphic_list = [x for x in df.graphic_name.drop_duplicates()]
-graphic_list.sort()
+if st.checkbox('Graphic'):
+    df = filter_name('graphic_name', 'Graphic')
 
-df = choice_df[choice_df.memory_gb.notnull()]
-memory_list = [int(x) for x in df.memory_gb.drop_duplicates()]
-memory_index = default_index('memory')
+if st.checkbox('Minimum memory'):
+    df = filter_min('memory_gb', 'GB', int)
 
-df = choice_df[choice_df.storage_gb.notnull()]
-storage_list = [int(x) for x in df.storage_gb.drop_duplicates()]
-storage_index = default_index('storage')
+if st.checkbox('Minimum storage'):
+    df = filter_min('storage_gb', 'GB', int)
 
-df = choice_df[choice_df.monitor_inch.notnull()]
-monitor_list = [x for x in df.monitor_inch.drop_duplicates()]
-monitor_index = default_index('monitor')
+if st.checkbox('Minimum camera pixel'):
+    df = filter_min('camera_mp', 'Megapixel', int)
 
-df = choice_df[choice_df.weight_kg.notnull()]
-df = df[df.weight_kg > 0]
-weight_list = [x for x in df.weight_kg.drop_duplicates()]
-weight_index = default_index('weight')
+if st.checkbox('Minimum camera aperture'):
+    df = filter_max('camera_aperture', 'f/n')
 
-df = choice_df[choice_df.camera_mp.notnull()]
-df = df[df.camera_mp > 0]
-camera_mp_list = [int(x) for x in df.camera_mp.drop_duplicates()]
-camera_mp_index = default_index('camera_mp')
+if st.checkbox('Optical Image Stabilization'):
+    df = filter_boolean('is_camera_ois')
 
-df = choice_df[choice_df.camera_aperture.notnull()]
-df = df[df.camera_aperture > 0]
-camera_aperture_list = [x for x in df.camera_aperture.drop_duplicates()]
-camera_aperture_index = default_index('camera_aperture')
+if st.checkbox('Maximum monitor'):
+    df = filter_max('monitor_inch', 'Inch')
 
-price_step = 500000
-price_min = int(choice_df.price.min() / price_step + 1) * price_step
-price_max = int(choice_df.price.max() / price_step + 1) * price_step
+if st.checkbox('5G'):
+    df = filter_boolean('is_network_5g')
 
-df = orig_df[COLUMNS].copy()
-df['title'] = orig_df.apply(get_title, axis='columns')
-df.insert(3, 'price_rp', orig_df.apply(get_price, axis='columns'))
-df = df.sort_values(by=['price'])
+if st.checkbox('NFC'):
+    df = filter_boolean('is_nfc')
 
-# Kolom
-# 1 nomor, 2 brand_name, 3 title, 4 price, 5 price_rp, 6 processor, 7 graphic,
-# 8 memory, 9 memory_gb, 10 storage, 11 storage_gb, 12 monitor,
-# 13 monitor_inch, 14 battery, 15 battery_mah, 16 network_5g, 17 is_nfc,
-# 18 usb, 19 is_usb_c, 20 is_compass, 21 weight, 22 weight_kg, 23 is_new,
-# 24 stock, 25 processor_name, 26 graphic_name, 27 camera, 28 camera_mp,
-# 29 camera_aperture, 30 is_camera_ois
+if st.checkbox('USB Type-C'):
+    df = filter_boolean('is_usb_c')
 
-# Sembunyikan nomor, dan lainnya yang tidak nyaman
-hide_columns = [2, 4, 9, 11, 13, 15, 19, 22, 23, 24, 25, 26, 28, 29, 30]
-css = '''
+if st.checkbox('Compass'):
+    df = filter_boolean('is_compass')
+
+if st.checkbox('Maximum weight'):
+    df = filter_max('weight_kg', 'Kg')
+
+if st.checkbox('Maximum price'):
+    step = 500000
+    tmp_df = orig_df[orig_df.stock > 0]
+    min_ = int(tmp_df.price.min() / step + 1) * step
+    max_ = int(tmp_df.price.max() / step + 1) * step
+    choice = st.slider('Rp', min_, max_, DEFAULT['price'], step)
+    df = df[df.price <= choice]
+
+if st.checkbox('New'):
+    df = df[df.is_new == 1]
+
+if st.checkbox('Stock'):
+    df = df[df.stock > 1]
+
+choice = st.selectbox(
+        'Sort by', options=SORT_BY_KEYS, format_func=sort_by_label)
+if choice != 'price':
+    c = getattr(df, choice)
+    df = df[c.notnull()]
+df = df.sort_values(by=[choice], ascending=[ASC[choice]])
+
+count = len(df)
+if count:
+    df = df.replace(np.nan, '', regex=True)
+    tmp_df = df[COLUMNS].copy()
+    tmp_df['title'] = df.apply(get_title, axis='columns')
+    tmp_df['price'] = df.apply(get_price, axis='columns')
+    tmp_df['processor'] = df.apply(get_processor, axis='columns')
+    tmp_df['memory'] = df.apply(get_memory, axis='columns')
+    tmp_df['monitor'] = df.apply(get_monitor, axis='columns')
+    tmp_df['camera'] = df.apply(get_camera, axis='columns')
+    tmp_df['is_usb_c'] = df.apply(get_usb, axis='columns')
+    st.write(f'Found {count} rows')
+    css = '''
     <style>
     .block-container {max-width: 100rem}
     th {display: none}
@@ -175,63 +267,9 @@ css = '''
     }
     .c-label--green {
         background-color: #3cff33;
-    }'''
-for column in hide_columns:
-    css += f'\n    tr>:nth-child({column})' + '{display: none}'
-css += '\n</style>'
-st.markdown(css, unsafe_allow_html=True)
-
-st.title('HP Finder')
-if st.checkbox('Brand'):
-    choice = st.selectbox('Brand', brand_list)
-    df = df[df.brand_name == choice]
-if st.checkbox('Processor'):
-    choice = st.selectbox('Processor', processor_list)
-    df = df[df.processor_name == choice]
-if st.checkbox('Graphic'):
-    choice = st.selectbox('Graphic', graphic_list)
-    df = df[df.graphic_name == choice]
-if st.checkbox('Minimum memory'):
-    choice = st.selectbox('GB', memory_list, index=memory_index)
-    df = df[df.memory_gb >= choice]
-if st.checkbox('Minimum storage'):
-    choice = st.selectbox('GB', storage_list, index=storage_index)
-    df = df[df.storage_gb >= choice]
-if st.checkbox('Camera pixel'):
-    choice = st.selectbox(
-        'Megapixel', camera_mp_list, index=camera_mp_index)
-    df = df[df.camera_mp <= choice]
-if st.checkbox('Camera aperture'):
-    choice = st.selectbox('f/n', camera_aperture_list)
-    df = df[df.camera_aperture <= choice]
-if st.checkbox('Optical Image Stabilization'):
-    df = df[df.is_camera_ois.notnull()]
-if st.checkbox('Maximum monitor'):
-    choice = st.selectbox('Inch', monitor_list, index=monitor_index)
-    df = df[df.monitor_inch <= choice]
-if st.checkbox('5G'):
-    df = df[df.is_network_5g.notnull()]
-if st.checkbox('NFC'):
-    df = df[df.is_nfc.notnull()]
-if st.checkbox('USB Type-C'):
-    df = df[df.is_usb_c.notnull()]
-if st.checkbox('Compass'):
-    df = df[df.is_compass.notnull()]
-if st.checkbox('Maximum weight'):
-    choice = st.selectbox('Kg', weight_list, index=weight_index)
-    df = df[df.weight_kg <= choice]
-if st.checkbox('Maximum price'):
-    choice = st.slider(
-            'Rp', price_min, price_max, DEFAULT['price'], price_step)
-    df = df[df.price <= choice]
-if st.checkbox('New'):
-    df = df[df.is_new == 1]
-if st.checkbox('Stock'):
-    df = df[df.stock > 1]
-sort_by = st.selectbox(
-            'Sort by', options=SORT_BY_KEYS, format_func=sort_by_label)
-df = df.sort_values(by=[sort_by], ascending=[ASC[sort_by]])
-df = df.replace(np.nan, '', regex=True)
-st.write(f'Found {len(df)} rows')
-st.write(
-    df.to_html(escape=False), unsafe_allow_html=True)
+    }
+    </style>'''
+    st.markdown(css, unsafe_allow_html=True)
+    st.write(tmp_df.to_html(escape=False), unsafe_allow_html=True)
+else:
+    st.write('No result')

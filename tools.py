@@ -21,6 +21,15 @@ def create_numeric_columns(cf: dict):
                 cf['numeric_columns'].append(column)
 
 
+def create_range_values(cf: dict):
+    r = dict()
+    for line in cf['range_values']:
+        column, values = line.split(':')
+        min_, max_ = values.split(',')
+        r[column] = float(min_), float(max_)
+    cf['range_values'] = r
+
+
 def get_names(d: dict) -> (list, dict):
     names = list(d.keys())
     alias = dict()
@@ -74,6 +83,7 @@ def read_conf(conf_file):
     # Untuk repair.py
     to_list('not_null_columns')
     to_list('numeric_units') and create_numeric_columns(cf)
+    to_list('range_values') and create_range_values(cf)
     create_names(conf, cf)
     # Untuk check.py
     to_list('count_columns')

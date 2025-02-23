@@ -216,6 +216,14 @@ Hasilnya bisa dilihat di:
 5. `Storage Finder <https://storage-finder.streamlit.app>`_
 6. `PSU Finder <https://psu-finder.streamlit.app>`_
 
+Jika ingin melihat seluruh kategori dalam sebuah halaman maka satukan dulu CSV-nya::
+
+    $ ~/env/bin/python csv_concat.py laptop hp mobo gpu storage psu
+
+Nanti akan terbentuk ``all.csv``. Kemudian jalankan::
+
+    $ ~/env/bin/streamlit run any_finder.py
+
 
 Perbaikan
 ---------

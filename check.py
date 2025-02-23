@@ -30,7 +30,6 @@ for index, row in orig_df.iterrows():
     print()
 
 print('RINGKASAN')
-orig_df = orig_df[orig_df.category == cf['category']]
 orig_df = orig_df[orig_df.stock > 0]
 count = len(orig_df)
 print(f'stock = {count} unit')
@@ -63,7 +62,7 @@ for column in cf.get('min_max_columns', []):
     field = getattr(df, column)
     min_ = field.min()
     max_ = field.max()
-    if column in cf.get('numeric_columns', []):
+    if column in cf.get('numeric_columns', []) or column == 'price':
         print(f'{column}: {min_:,} - {max_:,}')
     else:
         print(f'{column}: {min_} - {max_}')
