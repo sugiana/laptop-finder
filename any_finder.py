@@ -5,6 +5,9 @@ import numpy as np
 import streamlit as st
 
 
+st.set_page_config(page_title='Cari elektronik')
+
+
 def get_list(column: str, cast_func=None):
     c = getattr(orig_df, column)
     tmp_df = orig_df[c.notnull()]
@@ -32,10 +35,14 @@ def filter_name(column, label):
     return df[c == choice]
 
 
-def filter_contains(column, label):
-    text = st.sidebar.text_input(label)
+def filter_contains(column, value):
     c = getattr(df, column)
-    return df[c.str.contains(text, na=False, case=False)]
+    return df[c.str.contains(value, na=False, case=False)]
+
+
+def filter_custom_contains(column, label):
+    text = st.text_input(label)
+    return filter_contains(column, text)
 
 
 def filter_boolean(column):
@@ -218,7 +225,7 @@ SORT_BY = dict(
 
 TITLE = dict(
         laptop='Laptop', hp='Handphone', mobo='Motherboard',
-        gpu='Graphic Processor Unit', storage='Storage',
+        gpu='Graphics Processing Unit', storage='Storage',
         psu='Power Supply Unit')
 
 csv_file = None
@@ -257,7 +264,7 @@ if category in ('laptop', 'hp', 'gpu'):
 
     if category == 'gpu':
         if st.sidebar.checkbox('Processor model'):
-            df = filter_contains('processor_type', 'Any text, ex: 3060')
+            df = filter_custom_contains('processor_type', 'Any text, ex: 3060')
 
         if st.sidebar.checkbox('PCIe'):
             df = filter_min('pcie_version', 'Version', int)
@@ -269,11 +276,25 @@ if category in ('laptop', 'hp', 'gpu'):
         if st.sidebar.checkbox('Graphic'):
             df = filter_name('graphic_name', 'Graphic')
 
-        if st.sidebar.checkbox('Minimum storage'):
-            df = filter_min('storage_gb', 'GB', int)
-
         if st.sidebar.checkbox('Maximum monitor'):
             df = filter_max('monitor_inch', 'Inch')
+
+        if category == 'laptop':
+            if st.sidebar.checkbox('Monitor description'):
+                df = filter_custom_contains(
+                        'monitor', 'Any text, ex: touchscreen')
+
+            if st.sidebar.checkbox('Minimum VRAM'):
+                df = filter_min('graphic_gb', 'GB', int)
+
+            if st.sidebar.checkbox('SSD'):
+                df = filter_contains('storage', 'ssd')
+
+            if st.sidebar.checkbox('Thunderbolt'):
+                df = filter_contains('description', 'thunderbolt')
+
+        if st.sidebar.checkbox('Minimum storage'):
+            df = filter_min('storage_gb', 'GB', int)
 
         if st.sidebar.checkbox('Maximum weight'):
             df = filter_max('weight_kg', 'Kg')

@@ -5,6 +5,9 @@ import pandas as pd
 import streamlit as st
 
 
+st.set_page_config(page_title='Cari laptop')
+
+
 def get_list(column: str, cast_func=None):
     c = getattr(orig_df, column)
     tmp_df = orig_df[c.notnull()]
@@ -35,6 +38,11 @@ def filter_name(column, label):
 def filter_contains(column, value):
     c = getattr(df, column)
     return df[c.str.contains(value, na=False, case=False)]
+
+
+def filter_custom_contains(column, label):
+    text = st.text_input(label)
+    return filter_contains(column, text)
 
 
 def filter_boolean(column):
@@ -164,7 +172,7 @@ orig_df = read_csv()
 orig_df = orig_df[orig_df.category == 'laptop']
 df = orig_df.copy()
 
-st.title('Laptop Finder')
+st.title('Laptop')
 if st.checkbox('Brand'):
     df = filter_name('brand_name', 'Brand')
 
@@ -188,6 +196,9 @@ if st.checkbox('Minimum storage'):
 
 if st.checkbox('Maximum monitor'):
     df = filter_max('monitor_inch', 'Inch')
+
+if st.checkbox('Monitor description'):
+    df = filter_custom_contains('monitor', 'Any text, ex: touchscreen')
 
 if st.checkbox('Thunderbolt'):
     df = filter_contains('description', 'thunderbolt')

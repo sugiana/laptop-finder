@@ -15,6 +15,9 @@ conf = ConfigParser()
 conf.read(option.conf)
 
 cf = dict(conf.items('main'))
+if not (base_download_dir := cf.get('base_download_dir')):
+    home_dir = os.path.expanduser('~')
+    base_download_dir = os.path.join(home_dir, 'tmp')
 
 csv_files = []
 for url in cf['url'].strip().splitlines():
@@ -26,7 +29,7 @@ for url in cf['url'].strip().splitlines():
     csv_files.append(csv_file)
     if option.csv_only:
         continue
-    download_dir = os.path.join(cf['base_download_dir'], download_dir)
+    download_dir = os.path.join(base_download_dir, download_dir)
     if not os.path.exists(download_dir):
         continue
     for filename in os.listdir(download_dir):

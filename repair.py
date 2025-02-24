@@ -105,7 +105,7 @@ def clean_numeric(data: dict, cf: dict):
             clean_orig_column()
         else:
             try:
-                float(data[column])
+                data[column] = float(data[column])
             except ValueError:
                 data[column] = None
                 clean_orig_column()

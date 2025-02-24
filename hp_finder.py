@@ -5,6 +5,9 @@ import pandas as pd
 import streamlit as st
 
 
+st.set_page_config(page_title='Cari handphone')
+
+
 def get_list(column: str, cast_func=None):
     c = getattr(orig_df, column)
     tmp_df = orig_df[c.notnull()]
@@ -170,7 +173,7 @@ orig_df = read_csv()
 orig_df = orig_df[orig_df.category == 'hp']
 df = orig_df.copy()
 
-st.title('HP Finder')
+st.title('Handphone')
 if st.checkbox('Brand'):
     df = filter_name('brand_name', 'Brand')
 

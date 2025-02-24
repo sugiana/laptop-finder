@@ -5,6 +5,9 @@ import pandas as pd
 import streamlit as st
 
 
+st.set_page_config(page_title='Cari Power Supply Unit')
+
+
 def get_list(column: str, cast_func=None):
     c = getattr(orig_df, column)
     tmp_df = orig_df[c.notnull()]
@@ -112,7 +115,7 @@ orig_df = read_csv()
 orig_df = orig_df[orig_df.category == 'psu']
 df = orig_df.copy()
 
-st.title('PSU Finder')
+st.title('Power Supply Unit')
 if st.checkbox('Brand'):
     df = filter_name('brand_name', 'Brand')
 

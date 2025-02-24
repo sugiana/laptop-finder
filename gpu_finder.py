@@ -5,6 +5,9 @@ import pandas as pd
 import streamlit as st
 
 
+st.set_page_config(page_title='Cari GPU')
+
+
 def get_list(column: str, cast_func=None):
     c = getattr(orig_df, column)
     tmp_df = orig_df[c.notnull()]
@@ -30,6 +33,16 @@ def filter_name(column, label):
     choice = st.selectbox(label, list_, index=index)
     c = getattr(df, column)
     return df[c == choice]
+
+
+def filter_contains(column, value):
+    c = getattr(df, column)
+    return df[c.str.contains(value, na=False, case=False)]
+
+
+def filter_custom_contains(column, label):
+    text = st.text_input(label)
+    return filter_contains(column, text)
 
 
 def filter_boolean(column):
@@ -144,7 +157,7 @@ orig_df = read_csv()
 orig_df = orig_df[orig_df.category == 'gpu']
 df = orig_df.copy()
 
-st.title('GPU Finder')
+st.title('Graphics Processing Unit')
 if st.checkbox('Brand'):
     df = filter_name('brand_name', 'Brand')
 
@@ -152,8 +165,7 @@ if st.checkbox('Processor brand'):
     df = filter_name('processor_name', 'Brand')
 
 if st.checkbox('Processor type'):
-    text = st.text_input('Any text')
-    df = df[df.processor_type.str.contains(text, na=False, case=False)]
+    df = filter_custom_contains('processor_type', 'Any text, ex: 3060')
 
 if st.checkbox('Minimum memory'):
     df = filter_min('memory_gb', 'GB', int)
