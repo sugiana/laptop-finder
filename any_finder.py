@@ -1,11 +1,24 @@
 import sys
 import os
+import re
 import pandas as pd
 import numpy as np
 import streamlit as st
+from jaccard_index.jaccard import jaccard_index
 
 
 st.set_page_config(page_title='Cari elektronik')
+
+C_ALPHABET_PATTERN = re.compile('[a-z]')
+MIN_J_INDEX = 0.3
+
+
+def j_index(a: str, b: str) -> float:
+    if len(a) < 2 or len(b) < 2:
+        return 0
+    if C_ALPHABET_PATTERN.search(b):
+        return jaccard_index(a, b)
+    return 0
 
 
 def get_list(column: str, cast_func=None):
@@ -17,15 +30,20 @@ def get_list(column: str, cast_func=None):
     else:
         list_ = [x for x in c.drop_duplicates()]
     list_.sort()
-    if column in DEFAULT[category]:
-        index = -1
-        for val in list_:
-            index += 1
-            if val >= DEFAULT[category][column]:
-                break
-    else:
-        index = 0
-    return list_, index
+    if column not in DEFAULT[category]:
+        return list_, 0
+    index = -1
+    best_j_idx = 0
+    for val in list_:
+        index += 1
+        if isinstance(val, str):
+            j_idx = j_index(val.lower(), DEFAULT[category][column].lower())
+            if j_idx > best_j_idx:
+                best_j_idx = j_idx
+                best_index = index
+        elif val >= DEFAULT[category][column]:
+            return list_, index
+    return list_, best_index
 
 
 def filter_name(column, label):
@@ -57,8 +75,8 @@ def filter_min(column: str, label: str, cast_func=None) -> pd.DataFrame:
     return df[c >= choice]
 
 
-def filter_max(column: str, label: str) -> pd.DataFrame:
-    list_, index = get_list(column)
+def filter_max(column: str, label: str, cast_func=None) -> pd.DataFrame:
+    list_, index = get_list(column, cast_func)
     choice = st.sidebar.selectbox(label, list_, index=index)
     c = getattr(df, column)
     return df[c <= choice]
@@ -165,6 +183,71 @@ def get_power(cols):
     return f'{int(cols.power_watt)} Watt'
 
 
+def get_ethernet(cols):
+    if pd.isnull(cols.ethernet_count):
+        return ''
+    return f'{int(cols.ethernet_count)} ethernet'
+
+
+def get_size(cols):
+    if pd.isnull(cols.size_u) or not cols.size_u:
+        return ''
+    return f'{int(cols.size_u)}U'
+
+
+# label, function, arguments
+FILTERS = dict(
+    laptop=[
+        ('Processor name', filter_name, ['processor_name', 'Processor']),
+        ('Minimum memory', filter_min, ['memory_gb', 'GB', int]),
+        ('Graphic', filter_name, ['graphic_name', 'Graphic']),
+        ('Minimum VRAM', filter_min, ['graphic_gb', 'GB', int]),
+        ('Thunderbolt', filter_contains, ['description', 'thunderbolt']),
+        ('Minimum storage', filter_min, ['storage_gb', 'GB', int]),
+        ('SSD', filter_contains, ['storage', 'ssd']),
+        ('Maximum monitor', filter_max, ['monitor_inch', 'Inch']),
+        ('Monitor description', filter_custom_contains,
+         ['monitor', 'Any text, ex: touchscreen']),
+        ('Maximum weight', filter_max, ['weight_kg', 'Kg'])],
+    hp=[
+        ('Processor name', filter_name, ['processor_name', 'Processor']),
+        ('Minimum memory', filter_min, ['memory_gb', 'GB', int]),
+        ('Graphic', filter_name, ['graphic_name', 'Graphic']),
+        ('Maximum monitor', filter_max, ['monitor_inch', 'Inch']),
+        ('Minimum storage', filter_min, ['storage_gb', 'GB', int]),
+        ('Maximum weight', filter_max, ['weight_kg', 'Kg']),
+        ('Minimum camera pixel', filter_min, ['camera_mp', 'Megapixel', int]),
+        ('Minimum camera aperture', filter_max, ['camera_aperture', 'f/n']),
+        ('Optical Image Stabilization', filter_boolean, ['is_camera_ois']),
+        ('5G', filter_boolean, ['is_network_5g']),
+        ('NFC', filter_boolean, ['is_nfc']),
+        ('USB Type-C', filter_boolean, ['is_usb_c']),
+        ('Compass', filter_boolean, ['is_compass'])],
+    mobo=[
+        ('PCIe x16 count', filter_min, ['pcie_x16_count', 'Amount', int]),
+        ('PCIe x16 version', filter_min, ['pcie_x16_version', 'Number', int])],
+    gpu=[
+        ('Processor name', filter_name, ['processor_name', 'Processor']),
+        ('Processor model', filter_custom_contains,
+         ['processor_type', 'Any text, ex: 3060']),
+        ('PCIe', filter_min, ['pcie_version', 'Version', int]),
+        ('Minimum memory', filter_min, ['memory_gb', 'GB', int]),
+        ],
+    storage=[
+        ('Minimum capacity', filter_min, ['capacity_gb', 'GB', int]),
+        ('PCIe', filter_min, ['pcie_version', 'Version', int]),
+        ('Minimum warranty', filter_min, ['warranty_year', 'Year', int])],
+    psu=[
+        ('Minimum power', filter_min, ['power_watt', 'Watt', int]),
+        ('Model', filter_name, ['model_name', 'Name'])],
+    server=[
+        ('Processor name', filter_name, ['processor_name', 'Processor']),
+        ('Minimum memory', filter_min, ['memory_gb', 'GB', int]),
+        ('Minimum storage', filter_min, ['storage_gb', 'GB', int]),
+        ('Maximum size', filter_max, ['size_u', 'U', int]),
+        ('Ethernet', filter_min, ['ethernet_count', 'Count', int]),
+        ('RAID', filter_boolean, ['is_raid'])])
+
 COLUMNS = dict(
     laptop=[
         'title', 'price', 'processor', 'memory', 'monitor'],
@@ -174,7 +257,9 @@ COLUMNS = dict(
     mobo=['title', 'price', 'pcie_x16'],
     gpu=['title', 'price', 'processor_name', 'memory_gb', 'pcie_version'],
     storage=['title', 'price', 'capacity_gb', 'warranty_year', 'pcie_version'],
-    psu=['title', 'price', 'power_watt', 'model_name'])
+    psu=['title', 'price', 'power_watt', 'model_name'],
+    server=[
+        'title', 'price', 'processor', 'memory', 'ethernet_count', 'size_u'])
 
 DEFAULT = dict(
     laptop=dict(
@@ -188,7 +273,8 @@ DEFAULT = dict(
         price=5000000, memory_gb=8, pcie_version=4, processor_name='NVIDIA'),
     storage=dict(
         price=5000000, capacity_gb=1000, warranty_year=5, pcie_version=4),
-    psu=dict(price=4000000, power_watt=1000, model_name='Platinum'))
+    psu=dict(price=4000000, power_watt=1000, model_name='Platinum'),
+    server=dict(price=30000000, size_u=1, ethernet_count=2))
 
 # field = (label, is ascending)
 SORT_BY = dict(
@@ -221,12 +307,39 @@ SORT_BY = dict(
         pcie_version=('PCIe', False)),
     psu=dict(
         price=('Price', True),
-        power_watt=('Watt', False)))
+        power_watt=('Watt', False)),
+    server=dict(
+        price=('Price', True),
+        size_u=('Size', True),
+        ethernet_count=('Ethernet', False)))
 
 TITLE = dict(
-        laptop='Laptop', hp='Handphone', mobo='Motherboard',
-        gpu='Graphics Processing Unit', storage='Storage',
-        psu='Power Supply Unit')
+    laptop='Laptop', hp='Handphone', mobo='Motherboard',
+    gpu='Graphics Processing Unit', storage='Storage', psu='Power Supply Unit',
+    server='Server')
+
+CUSTOM_COLUMNS = dict(
+    laptop=[
+        ('processor', get_processor),
+        ('memory', get_memory),
+        ('monitor', get_monitor)],
+    hp=[
+        ('processor', get_processor),
+        ('memory', get_memory),
+        ('monitor', get_monitor),
+        ('camera', get_camera),
+        ('is_usb_c', get_usb)],
+    gpu=[('pcie_version', get_pcie)],
+    storage=[
+        ('pcie_version', get_pcie),
+        ('capacity_gb', get_capacity),
+        ('warranty_year', get_warranty)],
+    psu=[
+        ('power_watt', get_power)],
+    server=[
+        ('memory', get_memory),
+        ('ethernet_count', get_ethernet),
+        ('size_u', get_size)])
 
 csv_file = None
 for argv in sys.argv[1:]:
@@ -249,7 +362,7 @@ def read_csv():
 
 orig_df = read_csv()
 choice = st.sidebar.selectbox(
-    'Category', ('Laptop', 'HP', 'Mobo', 'GPU', 'Storage', 'PSU'))
+    'Category', ('Laptop', 'HP', 'Mobo', 'GPU', 'Storage', 'PSU', 'Server'))
 category = choice.lower()
 orig_df = orig_df[orig_df.category == category]
 df = orig_df.copy()
@@ -257,93 +370,9 @@ df = orig_df.copy()
 st.title(TITLE[category])
 if st.sidebar.checkbox('Brand'):
     df = filter_name('brand_name', 'Brand')
-
-if category in ('laptop', 'hp', 'gpu'):
-    if st.sidebar.checkbox('Processor name'):
-        df = filter_name('processor_name', 'Processor')
-
-    if category == 'gpu':
-        if st.sidebar.checkbox('Processor model'):
-            df = filter_custom_contains('processor_type', 'Any text, ex: 3060')
-
-        if st.sidebar.checkbox('PCIe'):
-            df = filter_min('pcie_version', 'Version', int)
-
-    if st.sidebar.checkbox('Minimum memory'):
-        df = filter_min('memory_gb', 'GB', int)
-
-    if category in ('laptop', 'hp'):
-        if st.sidebar.checkbox('Graphic'):
-            df = filter_name('graphic_name', 'Graphic')
-
-        if st.sidebar.checkbox('Maximum monitor'):
-            df = filter_max('monitor_inch', 'Inch')
-
-        if category == 'laptop':
-            if st.sidebar.checkbox('Monitor description'):
-                df = filter_custom_contains(
-                        'monitor', 'Any text, ex: touchscreen')
-
-            if st.sidebar.checkbox('Minimum VRAM'):
-                df = filter_min('graphic_gb', 'GB', int)
-
-            if st.sidebar.checkbox('SSD'):
-                df = filter_contains('storage', 'ssd')
-
-            if st.sidebar.checkbox('Thunderbolt'):
-                df = filter_contains('description', 'thunderbolt')
-
-        if st.sidebar.checkbox('Minimum storage'):
-            df = filter_min('storage_gb', 'GB', int)
-
-        if st.sidebar.checkbox('Maximum weight'):
-            df = filter_max('weight_kg', 'Kg')
-
-        if category == 'hp':
-            if st.sidebar.checkbox('Minimum camera pixel'):
-                df = filter_min('camera_mp', 'Megapixel', int)
-
-            if st.sidebar.checkbox('Minimum camera aperture'):
-                df = filter_max('camera_aperture', 'f/n')
-
-            if st.sidebar.checkbox('Optical Image Stabilization'):
-                df = filter_boolean('is_camera_ois')
-
-            if st.sidebar.checkbox('5G'):
-                df = filter_boolean('is_network_5g')
-
-            if st.sidebar.checkbox('NFC'):
-                df = filter_boolean('is_nfc')
-
-            if st.sidebar.checkbox('USB Type-C'):
-                df = filter_boolean('is_usb_c')
-
-            if st.sidebar.checkbox('Compass'):
-                df = filter_boolean('is_compass')
-
-elif category == 'mobo':
-    if st.sidebar.checkbox('PCIe x16 count'):
-        df = filter_min('pcie_x16_count', 'Amount', int)
-
-    if st.sidebar.checkbox('PCIe x16 version'):
-        df = filter_min('pcie_x16_version', 'Number', int)
-
-elif category == 'storage':
-    if st.sidebar.checkbox('Minimum capacity'):
-        df = filter_min('capacity_gb', 'GB', int)
-
-    if st.sidebar.checkbox('PCIe'):
-        df = filter_min('pcie_version', 'Version', int)
-
-    if st.sidebar.checkbox('Minimum warranty'):
-        df = filter_min('warranty_year', 'Year', int)
-
-elif category == 'psu':
-    if st.sidebar.checkbox('Minimum power'):
-        df = filter_min('power_watt', 'Watt', int)
-
-    if st.sidebar.checkbox('Model'):
-        df = filter_name('model_name', 'Name')
+for label, func, args in FILTERS[category]:
+    if st.sidebar.checkbox(label):
+        df = func(*args)
 
 if st.sidebar.checkbox('Maximum price'):
     default = DEFAULT[category]['price']
@@ -374,20 +403,8 @@ if count:
     tmp_df = df[columns].copy()
     tmp_df['title'] = df.apply(get_title, axis='columns')
     tmp_df['price'] = df.apply(get_price, axis='columns')
-    if category in ('laptop', 'hp'):
-        tmp_df['processor'] = df.apply(get_processor, axis='columns')
-        tmp_df['memory'] = df.apply(get_memory, axis='columns')
-        tmp_df['monitor'] = df.apply(get_monitor, axis='columns')
-        if category == 'hp':
-            tmp_df['camera'] = df.apply(get_camera, axis='columns')
-            tmp_df['is_usb_c'] = df.apply(get_usb, axis='columns')
-    elif category in ('gpu', 'storage'):
-        tmp_df['pcie_version'] = df.apply(get_pcie, axis='columns')
-        if category == 'storage':
-            tmp_df['capacity_gb'] = df.apply(get_capacity, axis='columns')
-            tmp_df['warranty_year'] = df.apply(get_warranty, axis='columns')
-    elif category == 'psu':
-        tmp_df['power_watt'] = df.apply(get_power, axis='columns')
+    for column, func in CUSTOM_COLUMNS[category]:
+        tmp_df[column] = df.apply(func, axis='columns')
     css = '''
         <style>
         .block-container {max-width: 100rem}
