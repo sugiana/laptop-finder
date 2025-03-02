@@ -31,12 +31,12 @@ Untuk mengunduh HTML maka kita membutuhkan
 `Google Chrome <https://www.google.com/intl/id_id/chrome/>`_. Kalau sudah
 terpasang jalankan::
 
-    $ mkdir -p /home/sugiana/tmp/tokopedia-nvidiageforcelt
-    $ ~/env/bin/python downloader.py --url=https://www.tokopedia.com/nvidiageforcelt/product --download-dir=/home/sugiana/tmp/tokopedia-nvidiageforcelt
+    $ mkdir -p /home/sugiana/tmp/tokopedia-nvidiageforcelt-product
+    $ ~/env/bin/python downloader.py --url=https://www.tokopedia.com/nvidiageforcelt/product --download-dir=/home/sugiana/tmp/tokopedia-nvidiageforcelt-product
 
 Proses ini akan membuat:
 
-1. File ``/home/sugiana/tmp/tokopedia-nvidiageforcelt.csv`` berisi daftar
+1. File ``/home/sugiana/tmp/tokopedia-nvidiageforcelt-product.csv`` berisi daftar
    tautan produk. Tujuannya sebagai *cache* yaitu bila ada masalah di tengah
    proses maka tidak perlu lagi membaca halaman awal, cukup membaca file ini
    untuk mendapatkan daftarnya.
@@ -44,7 +44,7 @@ Proses ini akan membuat:
 
 Selanjutnya seluruh file HTML itu akan disimpan dalam sebuah file CSV dengan cara::
 
-    $ ~/env/bin/python to_csv.py --download-dir=/home/sugiana/tmp/tokopedia-nvidiageforcelt --parser=tokopedia --output-file=tokopedia-nvidiageforcelt.csv
+    $ ~/env/bin/python to_csv.py --download-dir=/home/sugiana/tmp/tokopedia-nvidiageforcelt-product --parser=tokopedia --output-file=tokopedia-nvidiageforcelt-product.csv
 
 Untuk mendapatkan spesifikasi laptop secara terstruktur maka kita akan
 **bertanya ke AI** yaitu `Ollama <https://ollama.com>`_. Pastikan Anda sudah
@@ -56,7 +56,7 @@ memahami spesifikasi hardware ketimbang
 
 Jalankan::
 
-    $ ~/env/bin/python to_category.py laptop.ini --input-file=tokopedia-nvidiageforcelt.csv --output-file=laptop-nvidiageforcelt.csv
+    $ ~/env/bin/python to_category.py laptop.ini --input-file=tokopedia-nvidiageforcelt-product.csv --output-file=laptop-nvidiageforcelt-product.csv
 
 Gunakan opsi ``--help`` untuk melihat kemungkinan lainnya. Misalkan tambah
 ``--limit=5`` yang berarti hanya membaca 5 tautan saja. Pembatasan ini biasanya
@@ -70,15 +70,15 @@ Setelah selesai lakukan bersih-bersih agar konsisten seperti:
 
 Untuk melakukannya jalankan::
 
-    $ ~/env/bin/python repair.py laptop.ini --csv-file=laptop-nvidiageforcelt.csv
+    $ ~/env/bin/python repair.py laptop.ini --csv-file=laptop-nvidiageforcelt-product.csv
 
 Untuk melihat hasil berikut ringkasannya::
 
-    $ ~/env/bin/python check.py laptop.ini --csv-file=laptop-nvidiageforcelt.csv
+    $ ~/env/bin/python check.py laptop.ini --csv-file=laptop-nvidiageforcelt-product.csv
 
 Setelah selesai aktifkan web server::
 
-    $ ~/env/bin/streamlit run laptop_finder.py laptop-nvidiageforcelt.csv
+    $ ~/env/bin/streamlit run laptop_finder.py laptop-nvidiageforcelt-product.csv
 
 Nanti otomatis Chrome membuka `http://localhost:8501 <http://localhost:8501>`_.
 Selanjutnya pilih kriteria laptop yang dibutuhkan.
@@ -89,11 +89,11 @@ Menggabungkan File CSV
 
 Sekarang kita unduh daftar laptop dari **toko lainnya**, masih di Tokopedia::
 
-    $ mkdir /home/sugiana/tmp/tokopedia-lenovojakarta
-    $ ~/env/bin/python downloader.py --url=https://www.tokopedia.com/lenovojakarta/product --download-dir=/home/sugiana/tmp/tokopedia-lenovojakarta
-    $ ~/env/bin/python to_csv.py --download-dir=/home/sugiana/tmp/tokopedia-lenovojakarta --parser=tokopedia --output-file=tokopedia-lenovojakarta.csv
-    $ ~/env/bin/python to_category.py laptop.ini --input-file=tokopedia-lenovojakarta.csv --output-file=laptop-lenovojakarta.csv
-    $ ~/env/bin/python repair.py laptop.ini --csv-file=laptop-lenovojakarta.csv
+    $ mkdir /home/sugiana/tmp/tokopedia-lenovojakarta-product
+    $ ~/env/bin/python downloader.py --url=https://www.tokopedia.com/lenovojakarta/product --download-dir=/home/sugiana/tmp/tokopedia-lenovojakarta-product
+    $ ~/env/bin/python to_csv.py --download-dir=/home/sugiana/tmp/tokopedia-lenovojakarta-product --parser=tokopedia --output-file=tokopedia-lenovojakarta-product.csv
+    $ ~/env/bin/python to_category.py laptop.ini --input-file=tokopedia-lenovojakarta-product.csv --output-file=laptop-lenovojakarta-product.csv
+    $ ~/env/bin/python repair.py laptop.ini --csv-file=laptop-lenovojakarta-product.csv
 
 Gabungkan dengan yang tadi::
 
@@ -132,14 +132,14 @@ ini aktif maka konfigurasi ``ollama_`` diabaikan.
 
 Jalankan::
 
-    $ ~/env/bin/python to_category.py live-laptop.ini --input-file=tokopedia-nvidiageforcelt.csv --output-file=laptop-nvidiageforcelt.csv
+    $ ~/env/bin/python to_category.py live-laptop.ini --input-file=tokopedia-nvidiageforcelt-product.csv --output-file=laptop-nvidiageforcelt-product.csv
 
 Jika mendapatkan pesan kesalahan terkait kuota maka tunggu sekitar satu menit,
 lalu jalankan lagi.
 
 Jika sudah selesai langkah selanjutnya masih sama::
 
-    $ ~/env/bin/python repair.py live-laptop.ini --csv-file=laptop-nvidiageforcelt.csv
+    $ ~/env/bin/python repair.py live-laptop.ini --csv-file=laptop-nvidiageforcelt-product.csv
 
 Jangan lupa gabungkan dengan yang lain agar menjadi ``laptop.csv``::
 
@@ -151,22 +151,22 @@ Handphone
 
 Untuk kategori HP langkahnya juga mirip. Intinya mengganti kata ``laptop`` menjadi ``hp``. Contoh::
 
-    $ mkdir /home/sugiana/tmp/tokopedia-oppo
-    $ ~/env/bin/python downloader.py --url=https://www.tokopedia.com/oppo/product --download-dir=/home/sugiana/tmp/tokopedia-oppo
-    $ ~/env/bin/python to_csv.py --download-dir=/home/sugiana/tmp/tokopedia-oppo --output-file=tokopedia-oppo.csv
-    $ ~/env/bin/python to_category.py hp.ini --input-file=tokopedia-oppo.csv --output-file=hp-oppo.csv
+    $ mkdir /home/sugiana/tmp/tokopedia-oppo-product
+    $ ~/env/bin/python downloader.py --url=https://www.tokopedia.com/oppo/product --download-dir=/home/sugiana/tmp/tokopedia-oppo-product
+    $ ~/env/bin/python to_csv.py --download-dir=/home/sugiana/tmp/tokopedia-oppo-product --output-file=tokopedia-oppo-product.csv
+    $ ~/env/bin/python to_category.py hp.ini --input-file=tokopedia-oppo-product.csv --output-file=hp-oppo-product.csv
 
 Perbaiki nilainya agar konsisten::
 
-    $ ~/env/bin/python repair.py hp.ini --csv-file=hp-oppo.csv
+    $ ~/env/bin/python repair.py hp.ini --csv-file=hp-oppo-product.csv
 
 Lihat hasilnya::
 
-    $ ~/env/bin/python check.py hp.ini --csv-file=hp-oppo.csv
+    $ ~/env/bin/python check.py hp.ini --csv-file=hp-oppo-product.csv
 
 Aktifkan web server::
 
-    $ ~/env/bin/streamlit run hp_finder.py hp-oppo.csv
+    $ ~/env/bin/streamlit run hp_finder.py hp-oppo-product.csv
 
 Cobalah unduh toko HP lainnya. Lihat ``hp.ini`` untuk URL-nya. Jika sudah
 sampai tahap ``repair.py`` maka gabungkan::
@@ -189,15 +189,16 @@ Seluruh langkah untuk mendapatkan ``laptop.csv`` tadi telah terangkum dalam ``cr
 
     $ cp laptop.ini live-laptop.ini
 
-Sesuaikanlah nilai ``base_download_dir`` bila perlu. Kemudian jalankan::
+Sesuaikanlah nilai ``base_download_dir`` bila perlu. Bila tidak ditetapkan maka
+file HTML akan ditaruh di ``<home-directory>/tmp``. Kemudian jalankan::
 
     $ ~/env/bin/python crawler.py live-laptop.ini
 
-Untuk kategori lainnya ada di file ``hp.ini``, ``mobo.ini``, ``gpu.ini``, dan
-``storage.ini``. Tentu saja kita bisa membuat kategori lainnya. Tirulah.
+Untuk kategori lainnya ada di file dengan akhiran ``.ini``. Tentu saja kita
+bisa membuat kategori lainnya. Silakan tiru.
 
 Jika Anda peduli dengan perubahan harga, stok, atau data lainnya maka
-**keesokan harinya** hapus dulu semua data dengan cara (**HATI-HATI**)::
+**seminggu kemudian** hapus semua data dengan cara (**HATI-HATI**)::
 
     $ ~/env/bin/python remove_data.py live-laptop.ini
 
@@ -224,6 +225,8 @@ Nanti akan terbentuk ``all.csv``. Kemudian jalankan::
 
     $ ~/env/bin/streamlit run any_finder.py
 
+Hasilnya bisa dilihat di `Cari elektronik <https://toko.warga.web.id>`_.
+
 
 Perbaikan
 ---------
@@ -231,16 +234,16 @@ Perbaikan
 Misalkan saat kita melihat-lihat data melalui web menemukan kesalahan.
 **Setelah melakukan perbaikan** cobalah hapus salah satu tautan yang bermasalah tadi::
 
-    $ ~/env/bin/python remove_by_filter.py --csv-file=hp-samsung.csv --filter="url == 'https://www.tokopedia.com/samsung/samsung-galaxy-a05s-6-128gb-silver-e3ea5'"
+    $ ~/env/bin/python remove_by_filter.py --csv-file=hp-samsung-etalase-mobiles.csv --filter="url == 'https://www.tokopedia.com/samsung/samsung-galaxy-a05s-6-128gb-silver-e3ea5'"
 
 Tujuannya agar lebih cepat pembuktiannya. Kemudian jalankan lagi proses pembacaan spesifikasi::
 
-    $ ~/env/bin/python to_category.py live-hp.ini --input-file=tokopedia-samsung.csv --output-file=hp-samsung.csv --filter="url == 'https://www.tokopedia.com/samsung/samsung-galaxy-a05s-6-128gb-silver-e3ea5'"
+    $ ~/env/bin/python to_category.py live-hp.ini --input-file=tokopedia-samsung-etalase-mobiles.csv --output-file=hp-samsung-etalase-mobiles.csv --filter="url == 'https://www.tokopedia.com/samsung/samsung-galaxy-a05s-6-128gb-silver-e3ea5'"
     $ ~/env/bin/python repair.py live-hp.ini --csv-file=hp-samsung.csv
 
 Lihat hasilnya apa sudah sesuai::
 
-    $ ~/env/bin/python check.py live-hp.ini --csv-file=hp-samsung.csv --filter="url == 'https://www.tokopedia.com/samsung/samsung-galaxy-a05s-6-128gb-silver-e3ea5'"
+    $ ~/env/bin/python check.py live-hp.ini --csv-file=hp-samsung-etalase-mobiles.csv --filter="url == 'https://www.tokopedia.com/samsung/samsung-galaxy-a05s-6-128gb-silver-e3ea5'"
 
 Kalau sudah sesuai gabungkan lagi semuanya::
 

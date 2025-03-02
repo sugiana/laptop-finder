@@ -3,6 +3,5 @@ webdriver-manager
 parsel
 pandas
 requests
-ollama
 streamlit
 jaccard-index

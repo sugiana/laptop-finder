@@ -134,7 +134,8 @@ class AI:
             for index, column in enumerate(self.conf['columns']):
                 key = str(index+1)
                 data[column] = d.get(key)
-            if data['category'].lower().find('ya') == 0:
+            category = data['category'].lower()
+            if category.find('ya') == 0 or category == self.conf['category']:
                 data['category'] = self.conf['category']
             else:
                 data['category'] = 'lainnya'

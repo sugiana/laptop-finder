@@ -26,9 +26,9 @@ download_dirs = []
 for url in cf['url'].strip().splitlines():
     print(url)
     p = urlparse(url)
-    shop_path = p.path.lstrip('/').split('/')[0]
+    web_path = p.path.lstrip('/').replace('/', '-')
     web_name = p.netloc.split('.')[-2]
-    download_dir = '-'.join([web_name, shop_path])
+    download_dir = '-'.join([web_name, web_path])
     download_dir = os.path.join(base_download_dir, download_dir)
     download_dirs.append((web_name, download_dir))
     print('  Download Directory:', download_dir)

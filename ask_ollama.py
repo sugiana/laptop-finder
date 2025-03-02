@@ -1,5 +1,8 @@
-from ollama import Client
-from parser import AI
+import requests
+from parser import (
+    AI,
+    HttpErr,
+    )
 
 
 class Ollama(AI):
@@ -11,6 +14,14 @@ class Ollama(AI):
             messages.append(system_role)
         d = dict(role='user', content=prompt)
         messages.append(d)
-        c = Client(host=ai['url'])
-        r = c.chat(model=ai['model'], messages=messages)
-        return r['message']['content'].rstrip()
+        options = dict(temperature=0)
+        data = dict(
+                model=ai['model'],
+                messages=messages,
+                options=options,
+                stream=False)
+        r = requests.post(ai['url'], json=data)
+        if r.status_code == 200:
+            d = r.json()
+            return d['message']['content'].rstrip()
+        raise HttpErr(r)

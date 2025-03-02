@@ -156,7 +156,8 @@ def get_monitor(cols):
 
 def get_usb(cols):
     return concat_columns(
-        cols, ('is_network_5g', 'is_nfc', 'is_usb_c', 'is_compass'))
+        cols, (
+            'is_network_5g', 'is_nfc', 'is_usb_c', 'is_compass', 'is_pencil'))
 
 
 def get_pcie(cols):
@@ -246,7 +247,18 @@ FILTERS = dict(
         ('Minimum storage', filter_min, ['storage_gb', 'GB', int]),
         ('Maximum size', filter_max, ['size_u', 'U', int]),
         ('Ethernet', filter_min, ['ethernet_count', 'Count', int]),
-        ('RAID', filter_boolean, ['is_raid'])])
+        ('RAID', filter_boolean, ['is_raid'])],
+    tablet=[
+        ('Processor name', filter_name, ['processor_name', 'Processor']),
+        ('Minimum memory', filter_min, ['memory_gb', 'GB', int]),
+        ('Graphic', filter_name, ['graphic_name', 'Graphic']),
+        ('Maximum monitor', filter_max, ['monitor_inch', 'Inch']),
+        ('Minimum storage', filter_min, ['storage_gb', 'GB', int]),
+        ('Maximum weight', filter_max, ['weight_kg', 'Kg']),
+        ('Minimum camera pixel', filter_min, ['camera_mp', 'Megapixel', int]),
+        ('Minimum camera aperture', filter_max, ['camera_aperture', 'f/n']),
+        ('USB Type-C', filter_boolean, ['is_usb_c']),
+        ('Pencil', filter_boolean, ['is_pencil'])])
 
 COLUMNS = dict(
     laptop=[
@@ -259,7 +271,10 @@ COLUMNS = dict(
     storage=['title', 'price', 'capacity_gb', 'warranty_year', 'pcie_version'],
     psu=['title', 'price', 'power_watt', 'model_name'],
     server=[
-        'title', 'price', 'processor', 'memory', 'ethernet_count', 'size_u'])
+        'title', 'price', 'processor', 'memory', 'ethernet_count', 'size_u'],
+    tablet=[
+        'title', 'price', 'processor', 'memory', 'camera', 'monitor',
+        'is_usb_c'])
 
 DEFAULT = dict(
     laptop=dict(
@@ -274,7 +289,10 @@ DEFAULT = dict(
     storage=dict(
         price=5000000, capacity_gb=1000, warranty_year=5, pcie_version=4),
     psu=dict(price=4000000, power_watt=1000, model_name='Platinum'),
-    server=dict(price=30000000, size_u=1, ethernet_count=2))
+    server=dict(price=30000000, size_u=1, ethernet_count=2),
+    tablet=dict(
+        price=7000000, memory_gb=6, storage_gb=128, monitor_inch=11,
+        weight_kg=0.552, camera_mp=12, camera_aperture=2.2))
 
 # field = (label, is ascending)
 SORT_BY = dict(
@@ -311,12 +329,20 @@ SORT_BY = dict(
     server=dict(
         price=('Price', True),
         size_u=('Size', True),
-        ethernet_count=('Ethernet', False)))
+        ethernet_count=('Ethernet', False)),
+    tablet=dict(
+        price=('Price', True),
+        memory_gb=('Memory', False),
+        storage_gb=('Storage', False),
+        monitor=('Monitor', True),
+        camera_mp=('Camera pixel', False),
+        camera_aperture=('Camera aperture', True),
+        weight_kg=('Weight', True)))
 
 TITLE = dict(
     laptop='Laptop', hp='Handphone', mobo='Motherboard',
     gpu='Graphics Processing Unit', storage='Storage', psu='Power Supply Unit',
-    server='Server')
+    server='Server', tablet='Tablet')
 
 CUSTOM_COLUMNS = dict(
     laptop=[
@@ -339,7 +365,14 @@ CUSTOM_COLUMNS = dict(
     server=[
         ('memory', get_memory),
         ('ethernet_count', get_ethernet),
-        ('size_u', get_size)])
+        ('size_u', get_size)],
+    tablet=[
+        ('processor', get_processor),
+        ('memory', get_memory),
+        ('monitor', get_monitor),
+        ('camera', get_camera),
+        ('is_usb_c', get_usb)])
+
 
 csv_file = None
 for argv in sys.argv[1:]:
@@ -362,7 +395,8 @@ def read_csv():
 
 orig_df = read_csv()
 choice = st.sidebar.selectbox(
-    'Category', ('Laptop', 'HP', 'Mobo', 'GPU', 'Storage', 'PSU', 'Server'))
+    'Category', (
+        'Laptop', 'HP', 'Mobo', 'GPU', 'Storage', 'PSU', 'Server', 'Tablet'))
 category = choice.lower()
 orig_df = orig_df[orig_df.category == category]
 df = orig_df.copy()
