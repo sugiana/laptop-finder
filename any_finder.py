@@ -111,28 +111,6 @@ def get_price(cols):
     return s
 
 
-def intersect_columns(cols, names: list):
-    c1 = getattr(cols, names[0])
-    if not c1:
-        return ''
-    rows = [c1]
-    for name in names[1:]:
-        c = getattr(cols, name)
-        if not c:
-            continue
-        if c1.find(c) < 0:
-            rows.append(c)
-    return '<br/>'.join(rows)
-
-
-def get_memory(cols):
-    return intersect_columns(cols, ('memory', 'storage'))
-
-
-def get_camera(cols):
-    return intersect_columns(cols, ('camera', 'is_camera_ois'))
-
-
 def concat_columns(cols, names: list):
     rows = []
     for column in names:
@@ -140,10 +118,20 @@ def concat_columns(cols, names: list):
             v = getattr(cols, column)
             v = v.strip()
             if v:
-                rows.append(v)
+                s = '\n'.join(rows)
+                if s.find(v) < 0:
+                    rows.append(v)
         except AttributeError:
             pass
     return '<br/>'.join(rows)
+
+
+def get_memory(cols):
+    return concat_columns(cols, ('memory', 'storage'))
+
+
+def get_camera(cols):
+    return concat_columns(cols, ('camera', 'is_camera_ois'))
 
 
 def get_processor(cols):
@@ -194,6 +182,15 @@ def get_size(cols):
     if pd.isnull(cols.size_u) or not cols.size_u:
         return ''
     return f'{int(cols.size_u)}U'
+
+
+def get_battery(cols):
+    return concat_columns(cols, ('battery', 'is_wireless_charging', 'size'))
+
+
+def get_water_resistant(cols):
+    return concat_columns(cols, (
+        'is_compass', 'is_altimeter', 'is_thermometer', 'is_water_resistant'))
 
 
 # label, function, arguments
@@ -258,7 +255,15 @@ FILTERS = dict(
         ('Minimum camera pixel', filter_min, ['camera_mp', 'Megapixel', int]),
         ('Minimum camera aperture', filter_max, ['camera_aperture', 'f/n']),
         ('USB Type-C', filter_boolean, ['is_usb_c']),
-        ('Pencil', filter_boolean, ['is_pencil'])])
+        ('Pencil', filter_boolean, ['is_pencil'])],
+    watch=[
+        ('Battery', filter_min, ['battery_days', 'Days', int]),
+        ('Water resistant', filter_boolean, ['is_water_resistant']),
+        ('Compass', filter_boolean, ['is_compass']),
+        ('Altimeter', filter_boolean, ['is_altimeter']),
+        ('Thermometer', filter_boolean, ['is_thermometer']),
+        ('Size', filter_max, ['size_mm', 'Milimeter']),
+        ('Wireless charging', filter_boolean, ['is_wireless_charging'])])
 
 COLUMNS = dict(
     laptop=[
@@ -274,7 +279,9 @@ COLUMNS = dict(
         'title', 'price', 'processor', 'memory', 'ethernet_count', 'size_u'],
     tablet=[
         'title', 'price', 'processor', 'memory', 'camera', 'monitor',
-        'is_usb_c'])
+        'is_usb_c'],
+    watch=[
+        'title', 'price', 'battery', 'is_water_resistant'])
 
 DEFAULT = dict(
     laptop=dict(
@@ -292,7 +299,8 @@ DEFAULT = dict(
     server=dict(price=30000000, size_u=1, ethernet_count=2),
     tablet=dict(
         price=7000000, memory_gb=6, storage_gb=128, monitor_inch=11,
-        weight_kg=0.552, camera_mp=12, camera_aperture=2.2))
+        weight_kg=0.552, camera_mp=12, camera_aperture=2.2),
+    watch=dict(price=2000000, battery_days=7))
 
 # field = (label, is ascending)
 SORT_BY = dict(
@@ -337,12 +345,15 @@ SORT_BY = dict(
         monitor=('Monitor', True),
         camera_mp=('Camera pixel', False),
         camera_aperture=('Camera aperture', True),
-        weight_kg=('Weight', True)))
+        weight_kg=('Weight', True)),
+    watch=dict(
+        price=('Price', True),
+        battery_days=('Battery', False)))
 
 TITLE = dict(
     laptop='Laptop', hp='Handphone', mobo='Motherboard',
     gpu='Graphics Processing Unit', storage='Storage', psu='Power Supply Unit',
-    server='Server', tablet='Tablet')
+    server='Server', tablet='Tablet', watch='Watch')
 
 CUSTOM_COLUMNS = dict(
     laptop=[
@@ -371,7 +382,10 @@ CUSTOM_COLUMNS = dict(
         ('memory', get_memory),
         ('monitor', get_monitor),
         ('camera', get_camera),
-        ('is_usb_c', get_usb)])
+        ('is_usb_c', get_usb)],
+    watch=[
+        ('battery', get_battery),
+        ('is_water_resistant', get_water_resistant)])
 
 
 csv_file = None
@@ -396,7 +410,8 @@ def read_csv():
 orig_df = read_csv()
 choice = st.sidebar.selectbox(
     'Category', (
-        'Laptop', 'HP', 'Mobo', 'GPU', 'Storage', 'PSU', 'Server', 'Tablet'))
+        'Laptop', 'HP', 'Mobo', 'GPU', 'Storage', 'PSU', 'Server', 'Tablet',
+        'Watch'))
 category = choice.lower()
 orig_df = orig_df[orig_df.category == category]
 df = orig_df.copy()
@@ -437,7 +452,7 @@ if count:
     tmp_df = df[columns].copy()
     tmp_df['title'] = df.apply(get_title, axis='columns')
     tmp_df['price'] = df.apply(get_price, axis='columns')
-    for column, func in CUSTOM_COLUMNS[category]:
+    for column, func in CUSTOM_COLUMNS.get(category, []):
         tmp_df[column] = df.apply(func, axis='columns')
     css = '''
         <style>

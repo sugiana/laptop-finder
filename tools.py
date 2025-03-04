@@ -77,6 +77,8 @@ def read_conf(conf_file):
     if cf.get('filter', '').find('stock > 0') > -1:
         cf['is_ready_stock'] = True
     # Untuk to_category.py
+    cf['categories'] = [x.strip() for x in cf['category'].split(',')]
+    cf['category'] = cf['categories'][0]
     cf['prompt_template'] = cf['prompt_template'].strip()
     cf['columns'] = cf['columns'].strip().split()
     to_str('role')

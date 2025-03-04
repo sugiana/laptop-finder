@@ -22,9 +22,9 @@ if not (base_download_dir := cf.get('base_download_dir')):
 csv_files = []
 for url in cf['url'].strip().splitlines():
     p = urlparse(url)
-    shop_path = p.path.lstrip('/').split('/')[0]
+    web_path = p.path.lstrip('/').replace('/', '-')
     web_name = p.netloc.split('.')[-2]
-    download_dir = '-'.join([web_name, shop_path])
+    download_dir = '-'.join([web_name, web_path])
     csv_file = download_dir + '.csv'
     csv_files.append(csv_file)
     if option.csv_only:

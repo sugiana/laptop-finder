@@ -67,7 +67,7 @@ def clean_name(data: dict, column: str, nice_names: list, back_ref=dict()):
         names[column].append(data[column])
 
 
-OTHERS = ('tidak', 'unknown', 'none', 'lainnya', '-')
+OTHERS = ('tidak', 'unknown', 'none', 'lainnya', '-', 'n/a')
 
 
 def clean_names(data: dict, cf: dict):
@@ -121,7 +121,7 @@ def clean_range_value(data: dict, cf: dict):
         data[column] = None
 
 
-NEGATIVE_BOOLEAN = ['tidak', 'no']
+NEGATIVE_BOOLEAN = ['tidak', 'no', 'none', 'n/a']
 
 
 def clean_boolean(data: dict):

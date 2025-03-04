@@ -16,13 +16,13 @@ option = pars.parse_args(sys.argv[1:])
 cf = read_conf(option.conf)
 
 orig_df = pd.read_csv(option.csv_file)
-orig_df = orig_df[orig_df.category == cf['category']]
+df = orig_df[orig_df.category == cf['category']]
 if option.filter:
-    orig_df = orig_df.query(option.filter)
+    df = df.query(option.filter)
 
 columns = ['url', 'title'] + list(cf['columns']) + \
           ['is_new', 'stock', 'time', 'ai_duration']
-for index, row in orig_df.iterrows():
+for index, row in df.iterrows():
     print(f'#{index}')
     for column in columns:
         value = row[column]
@@ -30,36 +30,44 @@ for index, row in orig_df.iterrows():
     print()
 
 print('RINGKASAN')
-orig_df = orig_df[orig_df.stock > 0]
-count = len(orig_df)
+df = df[df.stock > 0]
+count = len(df)
 print(f'stock = {count} unit')
 
 # Boolean
-for column in orig_df.columns:
+for column in df.columns:
     if column.find('is_') != 0:
         continue
-    field = getattr(orig_df, column)
-    df = orig_df[field.notnull()]
-    count = len(df)
+    field = getattr(df, column)
+    tmp_df = df[field.notnull()]
+    count = len(tmp_df)
     print(f'{column} = {count} unit')
 
 # Group by
+count = orig_df.groupby('category').size()
+tmp_df = count.reset_index()
+print('category')
+for index, row in tmp_df.iterrows():
+    name, count = row.values
+    count = int(count)
+    print(f'  {name} = {count} unit')
+
 for column in cf.get('count_columns', []):
-    field = getattr(orig_df, column)
-    df = orig_df[field.notnull()]
-    count = df.groupby(column).size()
-    df = count.reset_index()
+    field = getattr(df, column)
+    tmp_df = df[field.notnull()]
+    count = tmp_df.groupby(column).size()
+    tmp_df = count.reset_index()
     print(column)
-    for index, row in df.iterrows():
+    for index, row in tmp_df.iterrows():
         name, count = row.values
         count = int(count)
         print(f'  {name} = {count} unit')
 
 # Min & Max
 for column in cf.get('min_max_columns', []):
-    field = getattr(orig_df, column)
-    df = orig_df[field.notnull()]
     field = getattr(df, column)
+    tmp_df = df[field.notnull()]
+    field = getattr(tmp_df, column)
     min_ = field.min()
     max_ = field.max()
     if column in cf.get('numeric_columns', []) or column == 'price':

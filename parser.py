@@ -135,10 +135,10 @@ class AI:
                 key = str(index+1)
                 data[column] = d.get(key)
             category = data['category'].lower()
-            if category.find('ya') == 0 or category == self.conf['category']:
-                data['category'] = self.conf['category']
-            else:
-                data['category'] = 'lainnya'
+            for ref_category in self.conf['categories']:
+                if category == ref_category:
+                    data['category'] = self.conf['category']
+                    break
             data = {key: [data[key]] for key in data}
             df = pd.DataFrame(data)
             if output_df is not None or not is_first:
