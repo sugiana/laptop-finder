@@ -59,7 +59,7 @@ def filter_contains(column, value):
 
 
 def filter_custom_contains(column, label):
-    text = st.text_input(label)
+    text = st.sidebar.text_input(label)
     return filter_contains(column, text)
 
 
@@ -437,6 +437,9 @@ if st.sidebar.checkbox('New'):
 
 if st.sidebar.checkbox('Stock'):
     df = df[df.stock > 0]
+
+if st.sidebar.checkbox('Description'):
+    df = filter_custom_contains('description', 'Any text')
 
 sort_options = SORT_BY[category]
 options = list(sort_options.keys())

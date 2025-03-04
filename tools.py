@@ -11,6 +11,23 @@ def config_from_dict(d: dict, prefix: str):
     return r
 
 
+def create_columns(cf: dict):
+    columns = []
+    ask_list = []
+    no = 0
+    for line in cf['columns'].strip().splitlines():
+        t = line.split(':')
+        columns.append(t[0])
+        no += 1
+        ask = ':'.join(t[1:])
+        ask = ask.strip()
+        ask = f'{no}. {ask}'
+        ask_list.append(ask)
+    cf['columns'] = columns
+    ask_str = '\n'.join(ask_list)
+    cf['prompt_template'] = cf['prompt_template'].replace('{columns}', ask_str)
+
+
 def create_numeric_columns(cf: dict):
     cf['numeric_columns'] = []
     for unit in cf['numeric_units']:
@@ -79,9 +96,8 @@ def read_conf(conf_file):
     # Untuk to_category.py
     cf['categories'] = [x.strip() for x in cf['category'].split(',')]
     cf['category'] = cf['categories'][0]
-    cf['prompt_template'] = cf['prompt_template'].strip()
-    cf['columns'] = cf['columns'].strip().split()
     to_str('role')
+    create_columns(cf)
     # Untuk repair.py
     to_list('not_null_columns')
     to_list('numeric_units') and create_numeric_columns(cf)
