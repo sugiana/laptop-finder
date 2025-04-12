@@ -5,6 +5,7 @@ from time import time
 from html.parser import HTMLParser
 from parsel import Selector
 import pandas as pd
+import numpy as np
 
 
 class BaseError(Exception):
@@ -98,6 +99,17 @@ class AI:
     def ask(self, prompt) -> str:
         pass
 
+    def read_output_file(self):
+        df = pd.read_csv(self.output_file)
+        new_columns = dict()
+        for column in self.conf['columns']:
+            if column not in df.columns:
+                new_columns.update({column: np.nan})
+        if new_columns:
+            df = df.assign(**new_columns)
+            df.to_csv(self.output_file, index=False)
+        return df
+
     def parse(self):
         input_df = pd.read_csv(self.input_file)
         if self.conf.get('filter'):
@@ -107,7 +119,7 @@ class AI:
         if self.limit:
             input_df = input_df[:self.limit]
         if os.path.exists(self.output_file):
-            output_df = pd.read_csv(self.output_file)
+            output_df = self.read_output_file()
         else:
             output_df = None
         is_first = True

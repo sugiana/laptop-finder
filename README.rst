@@ -219,7 +219,7 @@ Hasilnya bisa dilihat di:
 
 Jika ingin melihat seluruh kategori dalam sebuah halaman maka satukan dulu CSV-nya::
 
-    $ ~/env/bin/python csv_concat.py laptop hp mobo gpu storage psu
+    $ ~/env/bin/python csv_concat.py laptop hp mobo gpu storage psu server tablet watch
 
 Nanti akan terbentuk ``all.csv``. Kemudian jalankan::
 
@@ -231,26 +231,55 @@ Hasilnya bisa dilihat di `Cari elektronik <https://toko.warga.web.id>`_.
 Perbaikan
 ---------
 
-Misalkan saat kita melihat-lihat data melalui web menemukan kesalahan.
-**Setelah melakukan perbaikan** cobalah hapus salah satu tautan yang bermasalah tadi::
+Misalkan kita ingin menambahkan kolom `power_watt` pada kategori GPU, maka
+ubahlah ``gpu.ini`` pada bagian ``columns =`` tambahkan::
 
-    $ ~/env/bin/python remove_by_filter.py --csv-file=hp-samsung-etalase-mobiles.csv --filter="url == 'https://www.tokopedia.com/samsung/samsung-galaxy-a05s-6-128gb-silver-e3ea5'"
+    power_watt: Berapa watt ? Sebut angka saja.
 
-Tujuannya agar lebih cepat pembuktiannya. Kemudian jalankan lagi proses pembacaan spesifikasi::
+Karena ini adalah angka maka di bagian ``numeric_units =`` tambahkan::
 
-    $ ~/env/bin/python to_category.py live-hp.ini --input-file=tokopedia-samsung-etalase-mobiles.csv --output-file=hp-samsung-etalase-mobiles.csv --filter="url == 'https://www.tokopedia.com/samsung/samsung-galaxy-a05s-6-128gb-silver-e3ea5'"
-    $ ~/env/bin/python repair.py live-hp.ini --csv-file=hp-samsung.csv
+    watt
+
+Sebelum kita hapus seluruh ``gpu-*csv`` maka coba dulu di salah satu tautan
+yang memuat daya GPU untuk memastikan prompt baru tadi sesuai jawabannya::
+
+    $ ~/env/bin/python remove_by_filter.py --csv-file=gpu-tokoexpert-etalase-vga-nvidia.csv --filter="url == 'https://www.tokopedia.com/tokoexpert/leadtek-nvidia-quadro-rtx-2000-ada-generation-16gb-gddr6-1730813484400805437'"
+
+Jalankan lagi proses pembacaan spesifikasi::
+
+    $ ~/env/bin/python crawler.py gpu.ini
 
 Lihat hasilnya apa sudah sesuai::
 
-    $ ~/env/bin/python check.py live-hp.ini --csv-file=hp-samsung-etalase-mobiles.csv --filter="url == 'https://www.tokopedia.com/samsung/samsung-galaxy-a05s-6-128gb-silver-e3ea5'"
+    $ ~/env/bin/python check.py gpu.ini --csv-file=gpu.csv --filter="url == 'https://www.tokopedia.com/tokoexpert/leadtek-nvidia-quadro-rtx-2000-ada-generation-16gb-gddr6-1730813484400805437'"
 
-Kalau sudah sesuai gabungkan lagi semuanya::
+Hasilnya seperti ini::
 
-    $ ~/env/bin/python csv_concat.py hp
+    url: ['https://www.tokopedia.com/tokoexpert/leadtek-nvidia-quadro-rtx-2000-ada-generation-16gb-gddr6-1730813484400805437']
+    title: ['LEADTEK NVIDIA QUADRO RTX 2000 ADA GENERATION 16GB GDDR6']
+    category: ['gpu']
+    brand_name: ['Leadtek']
+    processor_name: ['NVIDIA']
+    processor_type: ['RTX 2000 Ada Generation']
+    memory_gb: [16.0]
+    pcie_version: [4.0]
+    power_watt: [70.0]
+    is_new: [1]
+    stock: [99999]
 
-Lalu lihat hasilnya di web::
+Kini sudah tampak kolom ``power_watt`` dan nilai ``70`` sudah sesuai dengan
+yang tertera pada deskripsi produk. Selanjutnya hapus seluruh file ``gpu-*.csv``::
 
-    $ ~/env/bin/streamlit run hp_finder.py
+    $ rm gpu-*.csv
+
+Lalu buat lagi::
+
+    $ ~/env/bin/python crawler.py gpu.ini
+
+Satukan lagi semuanya dalam ``all.csv``::
+
+    $ ~/env/bin/python csv_concat.py laptop hp mobo gpu storage psu server tablet watch
+
+Terkait web maka sesuaikan juga ``gpu_finder.py`` dan ``any_finder.py``.
 
 Semoga berhasil.

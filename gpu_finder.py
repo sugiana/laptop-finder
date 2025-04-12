@@ -57,8 +57,8 @@ def filter_min(column: str, label: str, cast_func=None) -> pd.DataFrame:
     return df[c >= choice]
 
 
-def filter_max(column: str, label: str) -> pd.DataFrame:
-    list_, index = get_list(column)
+def filter_max(column: str, label: str, cast_func=None) -> pd.DataFrame:
+    list_, index = get_list(column, cast_func)
     choice = st.selectbox(label, list_, index=index)
     c = getattr(df, column)
     return df[c <= choice]
@@ -123,16 +123,26 @@ def get_pcie(cols):
     return f'PCIe {int(cols.pcie_version)}'
 
 
+def get_power(cols):
+    if pd.isnull(cols.power_watt) or not cols.power_watt:
+        return ''
+    return f'{int(cols.power_watt)} Watt'
+
+
 def sort_by_label(key):
     return SORT_BY[key]
 
 
-COLUMNS = ['title', 'price', 'processor_name', 'memory_gb', 'pcie_version']
-SORT_BY = dict(price='Price', memory_gb='Memory', pcie_version='PCIe')
+COLUMNS = [
+    'title', 'price', 'processor_name', 'memory_gb', 'pcie_version',
+    'power_watt']
+SORT_BY = dict(
+    price='Price', memory_gb='Memory', pcie_version='PCIe', power_watt='Power')
 SORT_BY_KEYS = list(SORT_BY.keys())
-ASC = dict(price=True, memory_gb=False, pcie_version=False)
+ASC = dict(price=True, memory_gb=False, pcie_version=False, power_watt=True)
 DEFAULT = dict(
-        price=5000000, memory_gb=8, pcie_version=4, processor_name='NVIDIA')
+        price=5000000, memory_gb=8, pcie_version=4, processor_name='NVIDIA',
+        power_watt=70)
 
 csv_file = None
 for argv in sys.argv[1:]:
@@ -173,6 +183,9 @@ if st.checkbox('Minimum memory'):
 if st.checkbox('PCIe'):
     df = filter_min('pcie_version', 'Version', int)
 
+if st.checkbox('Power'):
+    df = filter_max('power_watt', 'Watt', int)
+
 if st.checkbox('Maximum price'):
     step = 500000
     tmp_df = orig_df[orig_df.stock > 0]
@@ -203,6 +216,7 @@ if count:
     tmp_df['processor_name'] = df.apply(get_processor, axis='columns')
     tmp_df['memory_gb'] = df.apply(get_memory, axis='columns')
     tmp_df['pcie_version'] = df.apply(get_pcie, axis='columns')
+    tmp_df['power_watt'] = df.apply(get_power, axis='columns')
     st.write(f'Found {count} rows')
     css = '''
     <style>

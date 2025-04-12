@@ -130,6 +130,12 @@ def get_memory(cols):
     return concat_columns(cols, ('memory', 'storage'))
 
 
+def get_memory_gb(cols):
+    if pd.isnull(cols.memory_gb) or not cols.memory_gb:
+        return ''
+    return f'{int(cols.memory_gb)} GB'
+
+
 def get_camera(cols):
     return concat_columns(cols, ('camera', 'is_camera_ois'))
 
@@ -167,7 +173,7 @@ def get_warranty(cols):
 
 
 def get_power(cols):
-    if pd.isnull(cols.power_watt):
+    if pd.isnull(cols.power_watt) or not cols.power_watt:
         return ''
     return f'{int(cols.power_watt)} Watt'
 
@@ -230,7 +236,7 @@ FILTERS = dict(
          ['processor_type', 'Any text, ex: 3060']),
         ('PCIe', filter_min, ['pcie_version', 'Version', int]),
         ('Minimum memory', filter_min, ['memory_gb', 'GB', int]),
-        ],
+        ('Power', filter_max, ['power_watt', 'Watt', int])],
     storage=[
         ('Minimum capacity', filter_min, ['capacity_gb', 'GB', int]),
         ('PCIe', filter_min, ['pcie_version', 'Version', int]),
@@ -272,7 +278,9 @@ COLUMNS = dict(
         'title', 'price', 'processor', 'memory', 'camera', 'monitor',
         'is_usb_c'],
     mobo=['title', 'price', 'pcie_x16'],
-    gpu=['title', 'price', 'processor_name', 'memory_gb', 'pcie_version'],
+    gpu=[
+        'title', 'price', 'processor_name', 'memory_gb', 'pcie_version',
+        'power_watt'],
     storage=['title', 'price', 'capacity_gb', 'warranty_year', 'pcie_version'],
     psu=['title', 'price', 'power_watt', 'model_name'],
     server=[
@@ -292,7 +300,8 @@ DEFAULT = dict(
         weight_kg=0.15, camera_mp=50, camera_aperture=1.8),
     mobo=dict(price=5000000, pcie_x16_count=4, pcie_x16_version=4),
     gpu=dict(
-        price=5000000, memory_gb=8, pcie_version=4, processor_name='NVIDIA'),
+        price=5000000, memory_gb=8, pcie_version=4, processor_name='NVIDIA',
+        power_watt=70),
     storage=dict(
         price=5000000, capacity_gb=1000, warranty_year=5, pcie_version=4),
     psu=dict(price=4000000, power_watt=1000, model_name='Platinum'),
@@ -325,7 +334,8 @@ SORT_BY = dict(
     gpu=dict(
         price=('Price', True),
         memory_gb=('Memory', False),
-        pcie_version=('PCIe', False)),
+        pcie_version=('PCIe', False),
+        power_watt=('Power', True)),
     storage=dict(
         price=('Price', True),
         capacity_gb=('Capacity', False),
@@ -366,7 +376,10 @@ CUSTOM_COLUMNS = dict(
         ('monitor', get_monitor),
         ('camera', get_camera),
         ('is_usb_c', get_usb)],
-    gpu=[('pcie_version', get_pcie)],
+    gpu=[
+        ('memory_gb', get_memory_gb),
+        ('pcie_version', get_pcie),
+        ('power_watt', get_power)],
     storage=[
         ('pcie_version', get_pcie),
         ('capacity_gb', get_capacity),
