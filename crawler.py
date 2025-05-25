@@ -51,7 +51,7 @@ for csv_source in csv_sources:
     name, ext = os.path.splitext(csv_source)
     output_file = [cf['category']] + name.split('-')[1:]
     output_file = '-'.join(output_file) + ext
-    print(output_file)
     parse(cf, csv_source, output_file)
-    repair(cf, output_file)
-    concat(cf['category'])
+    if os.path.exists(output_file):
+        repair(cf, output_file)
+        concat(cf['category'])

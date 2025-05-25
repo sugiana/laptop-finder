@@ -10,7 +10,7 @@ from parser import (
     )
 
 
-XPATH_LIST = '//div[contains(@data-testid,"divProductWrapper")]//a'
+XPATH_LIST = '//div[@class="css-79elbk"]//a'
 XPATH_NEXT = '//a[@data-testid="btnShopProductPageNext"]'
 
 
@@ -18,12 +18,11 @@ class ListParser(BaseListParser):
     def get_product_urls(self):
         self.is_stock = True
         urls = []
-        self.is_stock = True
         for xs in self.driver.find_elements(By.XPATH, XPATH_LIST):
             # Apakah hanya membaca produk yang ada stoknya ?
             if self.is_ready_stock:
                 html = xs.get_attribute('innerHTML')
-                if html.find('divImgProductOverlay') > -1:
+                if html.lower().find('stok habis') > -1:
                     # Nanti dibaca next_page_urls(). Jika ketemu produk yang
                     # tidak ada stoknya maka jangan dilanjutkan karena
                     # produk-produk berikutnya pasti juga sudah habis.

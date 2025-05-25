@@ -161,4 +161,5 @@ class AI:
                 # Buat file baru
                 df.to_csv(self.output_file, index=False)
                 is_first = False
-        print(f'Sudah disimpan di {self.output_file}')
+        if os.path.exists(self.output_file):
+            print(f'Sudah disimpan di {self.output_file}')

@@ -406,10 +406,9 @@ for argv in sys.argv[1:]:
     if argv[-4:] == '.csv':
         csv_file = argv
 
+CSV_GZ = 'http://warga.web.id/files/dijual/all.csv.gz'
 if not csv_file:
-    FILES = [
-            'all.csv',
-            'http://warga.web.id/files/dijual/all.csv.gz']
+    FILES = ['all.csv', CSV_GZ]
     for csv_file in FILES:
         if os.path.exists(csv_file):
             break
@@ -461,6 +460,9 @@ sort_by = st.sidebar.selectbox(
         format_func=lambda key: sort_options[key][0])
 df = df.sort_values(by=[sort_by], ascending=sort_options[sort_by][1])
 df = df.replace(np.nan, '', regex=True)
+
+csv_url = f'<a href="{CSV_GZ}">Download CSV</a>'
+st.sidebar.markdown(csv_url, unsafe_allow_html=True)
 
 count = len(df)
 if count:
