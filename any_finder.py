@@ -269,7 +269,10 @@ FILTERS = dict(
         ('Altimeter', filter_boolean, ['is_altimeter']),
         ('Thermometer', filter_boolean, ['is_thermometer']),
         ('Size', filter_max, ['size_mm', 'Milimeter']),
-        ('Wireless charging', filter_boolean, ['is_wireless_charging'])])
+        ('Wireless charging', filter_boolean, ['is_wireless_charging'])],
+    mcu=[
+        ('USB Type-C', filter_boolean, ['is_usb_c']),
+        ('Charger', filter_boolean, ['is_charger'])])
 
 COLUMNS = dict(
     laptop=[
@@ -288,8 +291,8 @@ COLUMNS = dict(
     tablet=[
         'title', 'price', 'processor', 'memory', 'camera', 'monitor',
         'is_usb_c'],
-    watch=[
-        'title', 'price', 'battery', 'is_water_resistant'])
+    watch=['title', 'price', 'battery', 'is_water_resistant'],
+    mcu=['title', 'price', 'is_usb_c', 'is_charger'])
 
 DEFAULT = dict(
     laptop=dict(
@@ -309,7 +312,8 @@ DEFAULT = dict(
     tablet=dict(
         price=7000000, memory_gb=6, storage_gb=128, monitor_inch=11,
         weight_kg=0.552, camera_mp=12, camera_aperture=2.2),
-    watch=dict(price=2000000, battery_days=7))
+    watch=dict(price=2000000, battery_days=7),
+    mcu=dict(price=50000))
 
 # field = (label, is ascending)
 SORT_BY = dict(
@@ -358,12 +362,13 @@ SORT_BY = dict(
         weight_kg=('Weight', True)),
     watch=dict(
         price=('Price', True),
-        battery_days=('Battery', False)))
+        battery_days=('Battery', False)),
+    mcu=dict(price=('Price', True)))
 
 TITLE = dict(
     laptop='Laptop', hp='Handphone', mobo='Motherboard',
     gpu='Graphics Processing Unit', storage='Storage', psu='Power Supply Unit',
-    server='Server', tablet='Tablet', watch='Watch')
+    server='Server', tablet='Tablet', watch='Watch', mcu='Microcontroller')
 
 CUSTOM_COLUMNS = dict(
     laptop=[
@@ -423,7 +428,7 @@ orig_df = read_csv()
 choice = st.sidebar.selectbox(
     'Category', (
         'Laptop', 'HP', 'Mobo', 'GPU', 'Storage', 'PSU', 'Server', 'Tablet',
-        'Watch'))
+        'Watch', 'MCU'))
 category = choice.lower()
 orig_df = orig_df[orig_df.category == category]
 df = orig_df.copy()
