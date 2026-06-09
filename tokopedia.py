@@ -34,8 +34,11 @@ class ListParser(BaseListParser):
         return urls
 
     def next_page_url(self):
-        if not self.is_stock:
-            return
+        try:
+            if not self.is_stock:
+                return
+        except AttributeError:
+            raise Exception(f'Hapus {self.driver.current_url} dari daftar.')
         try:
             xs = self.driver.find_element(By.XPATH, XPATH_NEXT)
             return xs.get_attribute('href')

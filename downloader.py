@@ -3,6 +3,8 @@ import unicodedata
 import re
 from time import sleep
 from urllib.parse import urlparse
+import requests
+from unittest.mock import patch
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -10,6 +12,15 @@ from webdriver_manager.chrome import ChromeDriverManager
 import pandas as pd
 from tokopedia import ListParser as TokopediaListParser
 from macstore import ListParser as MacstoreListParser
+
+
+# Simpan fungsi asli agar tidak terjadi rekursi tak terbatas
+original_request = requests.Session.request
+
+
+def patched_request(self, method, url, **kwargs):
+    kwargs.setdefault('timeout', 120)
+    return original_request(self, method, url, **kwargs)
 
 
 # https://stackoverflow.com/questions/295135/turn-a-string-into-a-valid-filename
@@ -40,7 +51,9 @@ class Browser:
         self.download_dir = download_dir
         self.is_ready_stock = is_ready_stock
         driver_manager = ChromeDriverManager()
-        service = Service(driver_manager.install())
+        with patch('requests.Session.request', patched_request):
+            installer = driver_manager.install()
+        service = Service(installer)
         opt = Options()
         self.driver = webdriver.Chrome(service=service, options=opt)
 

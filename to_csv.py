@@ -37,6 +37,10 @@ def to_csv(parser: str, download_dir: str, output_file: str):
         except BaseError:
             print('  tidak dipahami')
             continue
+        except KeyError:
+            raise Exception(
+                f'  hapus file {full_path} '
+                'lalu jalankan kembali pengunduhnya.')
         d = dict(parser.data)
         if not d['description']:
             print('  tidak ada description')
