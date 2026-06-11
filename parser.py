@@ -137,12 +137,17 @@ class AI:
             prompt = self.conf['prompt_template'].format(desc=desc)
             awal = time()
             print(prompt)
-            s = self.ask(prompt)
-            print(s)
+            r = self.ask(prompt)
+            print(r['message'])
+            log_msg = []
             if (durasi := time() - awal) > 0.009:
-                print(format(durasi, '.2f'), 'detik')
+                log_msg.append(format(durasi, '.2f') + ' detik')
             data['ai_duration'] = durasi
-            d = sanitize_json_str(s)
+            if 'token' in r:
+                token = data['ai_token'] = r['token']
+                log_msg.append(f'{token} token')
+            print(', '.join(log_msg))
+            d = sanitize_json_str(r['message'])
             for index, column in enumerate(self.conf['columns']):
                 key = str(index+1)
                 data[column] = d.get(key)

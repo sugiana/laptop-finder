@@ -30,7 +30,7 @@ class Gemini(AI):
         if r.status_code == 200:
             d = r.json()
             s = d['candidates'][0]['content']['parts'][0]['text']
-            return s.rstrip()
+            return dict(message=s.rstrip())
         if r.status_code == 429:
             raise ResourceExhaustedErr(r)
         raise HttpErr(r)

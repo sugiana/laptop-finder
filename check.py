@@ -71,6 +71,7 @@ for column in cf.get('min_max_columns', []):
     min_ = field.min()
     max_ = field.max()
     if column in cf.get('numeric_columns', []) or column == 'price':
+        print(f'Column {column}: {[min_]}')
         print(f'{column}: {min_:,} - {max_:,}')
     else:
         print(f'{column}: {min_} - {max_}')

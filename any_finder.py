@@ -21,11 +21,17 @@ def j_index(a: str, b: str) -> float:
     return 0
 
 
+def to_int(s):
+    return int(float(s))
+
+
 def get_list(column: str, cast_func=None):
     c = getattr(orig_df, column)
     tmp_df = orig_df[c.notnull()]
     c = getattr(tmp_df, column)
     if cast_func:
+        if cast_func is int:
+            cast_func = to_int
         list_ = [cast_func(x) for x in c.drop_duplicates()]
     else:
         list_ = [x for x in c.drop_duplicates()]
@@ -133,7 +139,7 @@ def get_memory(cols):
 def get_memory_gb(cols):
     if pd.isnull(cols.memory_gb) or not cols.memory_gb:
         return ''
-    return f'{int(cols.memory_gb)} GB'
+    return f'{int(float(cols.memory_gb))} GB'
 
 
 def get_camera(cols):

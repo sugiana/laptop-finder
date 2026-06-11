@@ -92,6 +92,8 @@ def clean_str(data: dict):
             value = value.strip()
             if not value:
                 data[column] = None
+        elif pd.isnull(value):
+            data[column] = None
 
 
 def clean_numeric(data: dict, cf: dict):
