@@ -12,6 +12,7 @@ from csv_concat import concat
 
 pars = ArgumentParser()
 pars.add_argument('conf')
+pars.add_argument('--do-not-download', action='store_true')
 option = pars.parse_args(sys.argv[1:])
 
 cf = read_conf(option.conf)
@@ -35,6 +36,8 @@ for url in cf['url'].strip().splitlines():
     if not os.path.exists(download_dir):
         print('  Create', download_dir)
         os.mkdir(download_dir)
+    if option.do_not_download:
+        continue
     a = Browser(url, download_dir, cf['is_ready_stock'])
     a.run()
 
