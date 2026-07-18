@@ -1,10 +1,14 @@
+.env
+env
 __pycache__
+scratch
 test-*
 test_*
 live-*
 *.csv
 *.log
-*.sh
 *.html
 *.bak
 *.gz
+*.css
+upload.sh

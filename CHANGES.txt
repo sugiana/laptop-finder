@@ -1,3 +1,10 @@
+Versi 4 2026-07-11
+------------------
+- Memahami varian produk
+- AI bisa menggunakan protokol Ollama, OpenAI, atau Anthropic hanya dengan
+  membuat file .env, tidak lagi di setiap file *.ini
+- Tambah kategori pc
+
 Versi 3 2025-02-10
 ------------------
 - Penambahan kategori hanya dengan membuat file konfigurasi

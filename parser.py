@@ -6,6 +6,7 @@ from html.parser import HTMLParser
 from parsel import Selector
 import pandas as pd
 import numpy as np
+from ask_ai import AIProvider
 
 
 class BaseError(Exception):
@@ -17,10 +18,6 @@ class UrlNotFound(BaseError):
 
 
 class DescriptionNotFound(BaseError):
-    pass
-
-
-class HttpErr(Exception):
     pass
 
 
@@ -41,13 +38,19 @@ class BaseListParser:
         self.driver = driver
         self.is_ready_stock = is_ready_stock
 
+    def has_variant(self) -> bool:
+        return
+
 
 class BaseProductParser:
     def __init__(self, html):
         self.sel = Selector(html)
         self.data = dict(
-            url=None, shop_name=None, title=None, price=None, info=None,
+            url=None, shop_name=None, title=None, price=None, info={},
             is_new=1, stock=1, description=None)
+
+    def get_variant(self) -> dict:
+        return {}
 
 
 SUFFIX_PROBLEMS = [',}']
@@ -94,10 +97,10 @@ class AI:
         self.output_file = output_file
         self.limit = limit
         self.filter_ = filter_
+        self.ai = AIProvider()
 
-    # Override, please
-    def ask(self, prompt) -> str:
-        pass
+    def ask(self, prompt: str) -> str:
+        return self.ai.ask(prompt)
 
     def read_output_file(self):
         df = pd.read_csv(self.output_file)
@@ -124,6 +127,7 @@ class AI:
             output_df = None
         is_first = True
         input_df = input_df.sort_values(by='url')
+        is_saved = False
         for index, values in input_df.iterrows():
             if output_df is not None:
                 cache_df = output_df[output_df.url == values['url']]
@@ -143,9 +147,9 @@ class AI:
             if (durasi := time() - awal) > 0.009:
                 log_msg.append(format(durasi, '.2f') + ' detik')
             data['ai_duration'] = durasi
-            if 'token' in r:
-                token = data['ai_token'] = r['token']
-                log_msg.append(f'{token} token')
+            in_ = data['ai_token_input'] = r['token']["input"]
+            out_ = data['ai_token_output'] = r['token']["output"]
+            log_msg.append(f'Input {in_} token, Output {out_} token')
             print(', '.join(log_msg))
             d = sanitize_json_str(r['message'])
             for index, column in enumerate(self.conf['columns']):
@@ -162,9 +166,13 @@ class AI:
                 # Tambahkan
                 df.to_csv(
                     self.output_file, index=False, mode='a', header=False)
+                is_saved = True
             elif is_first:
                 # Buat file baru
                 df.to_csv(self.output_file, index=False)
+                is_saved = True
                 is_first = False
-        if os.path.exists(self.output_file):
+        if is_saved:
             print(f'Sudah disimpan di {self.output_file}')
+        else:
+            print(f"Tidak ada data")

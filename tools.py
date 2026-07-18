@@ -1,3 +1,6 @@
+import re
+import unicodedata
+from urllib.parse import urlparse
 from configparser import RawConfigParser
 
 
@@ -107,3 +110,21 @@ def read_conf(conf_file):
     to_list('count_columns')
     to_list('min_max_columns')
     return cf
+
+
+# https://stackoverflow.com/questions/295135/turn-a-string-into-a-valid-filename
+def slugify(value, allow_unicode=False):
+    value = str(value)
+    if allow_unicode:
+        value = unicodedata.normalize('NFKC', value)
+    else:
+        value = unicodedata.normalize('NFKD', value).\
+                encode('ascii', 'ignore').decode('ascii')
+    value = re.sub(r'[^\w\s-]', '', value.lower())
+    return re.sub(r'[-\s]+', '-', value).strip('-_')
+
+
+def nice_filename(url):
+    s = urlparse(url).path.lstrip('/').replace('/', '.')
+    s = slugify(s)
+    return s + '.html'

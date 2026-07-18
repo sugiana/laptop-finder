@@ -9,7 +9,7 @@ help_filter = 'contoh: stock >= 1'
 
 pars = ArgumentParser()
 pars.add_argument('conf')
-pars.add_argument('--csv-file')
+pars.add_argument('--csv-file', required=True)
 pars.add_argument('--filter', help=help_filter)
 option = pars.parse_args(sys.argv[1:])
 

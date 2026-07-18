@@ -26,7 +26,6 @@ class ListParser(BaseListParser):
         pass
 
 
-XPATH_URL = '//script[@type="application/ld+json"]/text()'
 XPATH_TITLE = '//h1/text()'
 XPATH_PRICE = '//p[@class="price"]/ins/span[contains('\
               '@class,"woocommerce-Price-amount")]/bdi/text()'
@@ -38,18 +37,11 @@ class ProductParser(BaseProductParser):
     def __init__(self, html):
         super().__init__(html)
         self.data.update(dict(
-            url=self.get_url(),
             shop_name='Macstore',
             brand='Apple',
             title=self.get_title(),
             price=self.get_price(),
             description=self.get_description()))
-
-    def get_url(self) -> str:
-        row = self.sel.xpath(XPATH_URL)[0]
-        d = json.loads(str(row))
-        d = d['@graph'][1]
-        return d['url']
 
     def get_title(self) -> str:
         return self.sel.xpath(XPATH_TITLE).extract()[0]

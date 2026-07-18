@@ -40,6 +40,7 @@ def get_list(column: str, cast_func=None):
         return list_, 0
     index = -1
     best_j_idx = 0
+    best_index = 0
     for val in list_:
         index += 1
         if isinstance(val, str):
@@ -257,6 +258,14 @@ FILTERS = dict(
         ('Maximum size', filter_max, ['size_u', 'U', int]),
         ('Ethernet', filter_min, ['ethernet_count', 'Count', int]),
         ('RAID', filter_boolean, ['is_raid'])],
+    pc=[
+        ('Processor name', filter_name, ['processor_name', 'Processor']),
+        ('Minimum memory', filter_min, ['memory_gb', 'GB', int]),
+        ('Graphic', filter_name, ['graphic_name', 'Graphic']),
+        ('Minimum VRAM', filter_min, ['graphic_gb', 'GB', int]),
+        ('Thunderbolt', filter_contains, ['description', 'thunderbolt']),
+        ('Minimum storage', filter_min, ['storage_gb', 'GB', int]),
+        ('SSD', filter_contains, ['storage', 'ssd'])],
     tablet=[
         ('Processor name', filter_name, ['processor_name', 'Processor']),
         ('Minimum memory', filter_min, ['memory_gb', 'GB', int]),
@@ -294,6 +303,8 @@ COLUMNS = dict(
     psu=['title', 'price', 'power_watt', 'model_name'],
     server=[
         'title', 'price', 'processor', 'memory', 'ethernet_count', 'size_u'],
+    pc=[
+        'title', 'price', 'processor', 'memory', 'monitor'],
     tablet=[
         'title', 'price', 'processor', 'memory', 'camera', 'monitor',
         'is_usb_c'],
@@ -315,6 +326,9 @@ DEFAULT = dict(
         price=5000000, capacity_gb=1000, warranty_year=5, pcie_version=4),
     psu=dict(price=4000000, power_watt=1000, model_name='Platinum'),
     server=dict(price=30000000, size_u=1, ethernet_count=2),
+    pc=dict(
+        price=21000000, memory_gb=16, graphic_gb=16, storage_gb=1000,
+        graphic_name='AMD'),
     tablet=dict(
         price=7000000, memory_gb=6, storage_gb=128, monitor_inch=11,
         weight_kg=0.552, camera_mp=12, camera_aperture=2.2),
@@ -358,6 +372,10 @@ SORT_BY = dict(
         price=('Price', True),
         size_u=('Size', True),
         ethernet_count=('Ethernet', False)),
+    pc=dict(
+        price=('Price', True),
+        memory_gb=('Memory', False),
+        storage_gb=('Storage', False)),
     tablet=dict(
         price=('Price', True),
         memory_gb=('Memory', False),
@@ -374,7 +392,8 @@ SORT_BY = dict(
 TITLE = dict(
     laptop='Laptop', hp='Handphone', mobo='Motherboard',
     gpu='Graphics Processing Unit', storage='Storage', psu='Power Supply Unit',
-    server='Server', tablet='Tablet', watch='Watch', mcu='Microcontroller')
+    server='Server', pc='PC', tablet='Tablet', watch='Watch',
+    mcu='Microcontroller')
 
 CUSTOM_COLUMNS = dict(
     laptop=[
@@ -401,6 +420,9 @@ CUSTOM_COLUMNS = dict(
         ('memory', get_memory),
         ('ethernet_count', get_ethernet),
         ('size_u', get_size)],
+    pc=[
+        ('processor', get_processor),
+        ('memory', get_memory)],
     tablet=[
         ('processor', get_processor),
         ('memory', get_memory),
@@ -433,8 +455,8 @@ def read_csv():
 orig_df = read_csv()
 choice = st.sidebar.selectbox(
     'Category', (
-        'Laptop', 'HP', 'Mobo', 'GPU', 'Storage', 'PSU', 'Server', 'Tablet',
-        'Watch', 'MCU'))
+        'Laptop', 'HP', 'Mobo', 'GPU', 'Storage', 'PSU', 'Server', 'PC',
+        'Tablet', 'Watch', 'MCU'))
 category = choice.lower()
 orig_df = orig_df[orig_df.category == category]
 df = orig_df.copy()

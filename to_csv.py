@@ -3,6 +3,7 @@ import os
 import json
 from argparse import ArgumentParser
 from datetime import datetime
+from glob import glob
 import pandas as pd
 from parser import BaseError
 from tokopedia import ProductParser as TokopediaProductParser
@@ -27,26 +28,32 @@ def to_csv(parser: str, download_dir: str, output_file: str):
         orig_df = None
     is_first = True
     no = 0
-    for filename in os.listdir(download_dir):
-        full_path = os.path.join(download_dir, filename)
-        print(full_path)
-        with open(full_path) as f:
+    pattern = os.path.join(download_dir, '*.html')
+    for html_file in glob(pattern):
+        html_file = os.path.join(download_dir, html_file)
+        print(html_file)
+        with open(html_file) as f:
             html = f.read()
         try:
             parser = parser_class(html)
-        except BaseError:
-            print('  tidak dipahami')
+        except BaseError as e:
+            print(f'  {e}')
             continue
         except KeyError:
             raise Exception(
-                f'  hapus file {full_path} '
+                f'  hapus file {html_file} '
                 'lalu jalankan kembali pengunduhnya.')
         d = dict(parser.data)
+        json_file, ext = os.path.splitext(html_file)
+        json_file = json_file + '.json'
+        with open(json_file) as f:
+            metadata = json.load(f)
+        d['url'] = metadata['url']
         if not d['description']:
             print('  tidak ada description')
             continue
         d['info'] = json.dumps(d['info'])
-        d['time'] = file_time(full_path).strftime('%Y-%m-%d %H:%M:%S')
+        d['time'] = file_time(html_file).strftime('%Y-%m-%d %H:%M:%S')
         data = {column: [d[column]] for column in d}
         df = pd.DataFrame(data)
         if orig_df is None:
@@ -77,7 +84,9 @@ def main(argv=sys.argv[1:]):
     parser = parser_names[0]
     help_parser = f'default {parser}'
 
-    download_dir = '/home/sugiana/tmp/' + parser
+    home_dir = os.path.expanduser('~')
+    base_download_dir = os.path.join(home_dir, 'tmp')
+    download_dir = os.path.join(base_download_dir, parser)
     help_tmp = f'default {download_dir}'
 
     output_file = f'{parser}.csv'

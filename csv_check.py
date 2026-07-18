@@ -1,19 +1,21 @@
 import sys
+from argparse import ArgumentParser
 import pandas as pd
 
 
-csv_file = sys.argv[1]
-df = pd.read_csv(csv_file)
+pars = ArgumentParser()
+pars.add_argument("csv_file")
+pars.add_argument("--filter")
+option = pars.parse_args(sys.argv[1:])
 
-print(len(df), 'produk')
+df = pd.read_csv(option.csv_file)
+if option.filter:
+    print("Filter", option.filter)
+    df = df.query(option.filter)
 
-columns = ['shop_name', 'is_new']
-for column in columns:
-    field = getattr(df, column)
-    tmp_df = df[field.notnull()]
-    field = getattr(tmp_df, column)
-    tmp_list = [x for x in field.drop_duplicates()]
-    print(column, tmp_list)
-
-tmp_list = df.url.drop_duplicates()
-print(len(tmp_list))
+for index, row in df.iterrows():
+    no = index + 1
+    print(f"#{no}")
+    for column in df.columns:
+        val = row[column]
+        print(f"  {column}: {[val]}")

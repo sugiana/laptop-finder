@@ -5,4 +5,8 @@ pandas
 requests
 streamlit
 jaccard-index
+langchain-ollama
+langchain-openai
+langchain-anthropic
 ollama
+dotenv
